@@ -11,3 +11,6 @@ Database        = "postgres"
 Password        = ""
 PoolSize        = 5
 ApplicationName = "lotBot"
+
+[Bot]
+Token = ""

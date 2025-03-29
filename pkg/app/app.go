@@ -8,6 +8,7 @@ import (
 	"lotBot/pkg/embedlog"
 
 	"github.com/go-pg/pg/v10"
+	"github.com/go-telegram/bot"
 	"github.com/labstack/echo/v4"
 )
 
@@ -20,19 +21,19 @@ type Config struct {
 		IsDevel   bool
 		EnableVFS bool
 	}
+	Bot struct {
+		Token string
+	}
 }
 
 type App struct {
-	// logger
 	embedlog.Logger
 	appName string
-	// .toml config
-	cfg Config
-	// db connections
-	db  db.DB
-	dbc *pg.DB
-	// http library
-	echo *echo.Echo
+	cfg     Config
+	db      db.DB
+	dbc     *pg.DB
+	echo    *echo.Echo
+	b       *bot.Bot
 }
 
 func New(appName string, verbose bool, cfg Config, db db.DB, dbc *pg.DB) *App {
@@ -48,6 +49,12 @@ func New(appName string, verbose bool, cfg Config, db db.DB, dbc *pg.DB) *App {
 	a.echo.HidePort = true
 	a.echo.IPExtractor = echo.ExtractIPFromRealIPHeader()
 
+	b, err := bot.New(cfg.Bot.Token)
+	if err != nil {
+		panic(err)
+	}
+	a.b = b
+
 	return a
 }
 
@@ -55,9 +62,10 @@ func New(appName string, verbose bool, cfg Config, db db.DB, dbc *pg.DB) *App {
 func (a *App) Run() error {
 	a.registerMetrics()
 	a.registerHandlers()
+	a.registerBotHandlers()
 	a.registerDebugHandlers()
 	a.registerAPIHandlers()
-	a.Printf("run success")
+	go a.b.Start(context.Background())
 	return a.runHTTPServer(a.cfg.Server.Host, a.cfg.Server.Port)
 }
 
