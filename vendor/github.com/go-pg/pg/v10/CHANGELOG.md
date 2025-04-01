@@ -8,6 +8,45 @@ but works with PostgreSQL, MySQL, and SQLite.
 
 # Changelog
 
+## v10.14.0
+
+- Added support for comments on ORM generated queries ([#2011](https://github.com/go-pg/pg/pull/2011))
+- Make reader and writer buffers configurable ([#2014](https://github.com/go-pg/pg/pull/2014))
+- Bumped golang.org/x/crypto from 0.21.0 to 0.31.0 ([#2013](https://github.com/go-pg/pg/pull/2013), [#2015](https://github.com/go-pg/pg/pull/2015))
+
+Thank you [@wwoytenko](https://github.com/wwoytenko) and [@tony2001](https://github.com/tony2001)
+
+## v10.13.0
+
+- Removed references to deprecated `io/ioutil` ([#2001](https://github.com/go-pg/pg/pull/2001))
+- Added password environment variable for easier testing ([#1996](https://github.com/go-pg/pg/pull/1996))
+- Bumped google.golang.org/protobuf from 1.25.0 to 1.33.0 ([#2000](https://github.com/go-pg/pg/pull/2000))
+- Bumped golang.org/x/net from 0.17.0 to 0.23.0 ([#2002](https://github.com/go-pg/pg/pull/2002))
+
+Thank you [@DarrylWong](https://github.com/DarrylWong) and [@testwill](https://github.com/testwill)
+
+## v10.12.0
+
+- Fixed invalid pointer dereference when accessing results ([#1990](https://github.com/go-pg/pg/pull/1990))
+- Updated minimum Golang version to v1.19.0 + go.mod cleanup ([#1992](https://github.com/go-pg/pg/pull/1992))
+- Bumped golang.org/x/net from 0.10.0 to 0.17.0 ([#1993](https://github.com/go-pg/pg/pull/1993))
+- Bumped gopkg.in/yaml.v3 from 3.0.0-20200313102051-9f266ea9e77c to 3.0.0 ([#1994](https://github.com/go-pg/pg/pull/1994))
+
+Thank you [@fernandez14](https://github.com/fernandez14)
+
+## v10.11.2
+
+- Improved memory allocation when working with multi-byte characters in `appendRune` ([#1988](https://github.com/go-pg/pg/pull/1988))
+- Added `ToURL` to `*Options` ([#1934](https://github.com/go-pg/pg/pull/1934))
+
+Thank you @dillonstreator and @MateusVeloso!
+
+## v10.11.1
+
+- Fixed bug with how cancelled contexts are handled in SingleConnPool connections ([#1981](https://github.com/go-pg/pg/pull/1981))
+
+Thank you @xin-tsla!
+
 ## v10.11.0
 
 - Updated dependency `mellium.im/sasl` from 0.2.1 to 0.3.1. ([#1969](https://github.com/go-pg/pg/pull/1969))

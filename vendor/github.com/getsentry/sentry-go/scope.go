@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"io"
 	"net/http"
+	"reflect"
 	"sync"
 	"time"
 )
@@ -27,7 +28,7 @@ type Scope struct {
 	breadcrumbs []*Breadcrumb
 	user        User
 	tags        map[string]string
-	contexts    map[string]Context
+	contexts    map[string]interface{}
 	extra       map[string]interface{}
 	fingerprint []string
 	level       Level
@@ -50,7 +51,7 @@ func NewScope() *Scope {
 	scope := Scope{
 		breadcrumbs: make([]*Breadcrumb, 0),
 		tags:        make(map[string]string),
-		contexts:    make(map[string]Context),
+		contexts:    make(map[string]interface{}),
 		extra:       make(map[string]interface{}),
 		fingerprint: make([]string, 0),
 	}
@@ -145,7 +146,7 @@ const maxRequestBodyBytes = 10 * 1024
 
 // A limitedBuffer is like a bytes.Buffer, but limited to store at most Capacity
 // bytes. Any writes past the capacity are silently discarded, similar to
-// io.Discard.
+// ioutil.Discard.
 type limitedBuffer struct {
 	Capacity int
 
@@ -208,7 +209,7 @@ func (scope *Scope) RemoveTag(key string) {
 }
 
 // SetContext adds a context to the current scope.
-func (scope *Scope) SetContext(key string, value Context) {
+func (scope *Scope) SetContext(key string, value interface{}) {
 	scope.mu.Lock()
 	defer scope.mu.Unlock()
 
@@ -216,7 +217,7 @@ func (scope *Scope) SetContext(key string, value Context) {
 }
 
 // SetContexts assigns multiple contexts to the current scope.
-func (scope *Scope) SetContexts(contexts map[string]Context) {
+func (scope *Scope) SetContexts(contexts map[string]interface{}) {
 	scope.mu.Lock()
 	defer scope.mu.Unlock()
 
@@ -338,12 +339,16 @@ func (scope *Scope) ApplyToEvent(event *Event, hint *EventHint) *Event {
 	defer scope.mu.RUnlock()
 
 	if len(scope.breadcrumbs) > 0 {
+		if event.Breadcrumbs == nil {
+			event.Breadcrumbs = []*Breadcrumb{}
+		}
+
 		event.Breadcrumbs = append(event.Breadcrumbs, scope.breadcrumbs...)
 	}
 
 	if len(scope.tags) > 0 {
 		if event.Tags == nil {
-			event.Tags = make(map[string]string, len(scope.tags))
+			event.Tags = make(map[string]string)
 		}
 
 		for key, value := range scope.tags {
@@ -353,7 +358,7 @@ func (scope *Scope) ApplyToEvent(event *Event, hint *EventHint) *Event {
 
 	if len(scope.contexts) > 0 {
 		if event.Contexts == nil {
-			event.Contexts = make(map[string]Context)
+			event.Contexts = make(map[string]interface{})
 		}
 
 		for key, value := range scope.contexts {
@@ -365,17 +370,13 @@ func (scope *Scope) ApplyToEvent(event *Event, hint *EventHint) *Event {
 				// to link errors and traces/spans in Sentry.
 				continue
 			}
-
-			// Ensure we are not overwriting event fields
-			if _, ok := event.Contexts[key]; !ok {
-				event.Contexts[key] = value
-			}
+			event.Contexts[key] = value
 		}
 	}
 
 	if len(scope.extra) > 0 {
 		if event.Extra == nil {
-			event.Extra = make(map[string]interface{}, len(scope.extra))
+			event.Extra = make(map[string]interface{})
 		}
 
 		for key, value := range scope.extra {
@@ -383,12 +384,14 @@ func (scope *Scope) ApplyToEvent(event *Event, hint *EventHint) *Event {
 		}
 	}
 
-	if event.User.IsEmpty() {
+	if (reflect.DeepEqual(event.User, User{})) {
 		event.User = scope.user
 	}
 
-	if len(event.Fingerprint) == 0 {
-		event.Fingerprint = append(event.Fingerprint, scope.fingerprint...)
+	if (event.Fingerprint == nil || len(event.Fingerprint) == 0) &&
+		len(scope.fingerprint) > 0 {
+		event.Fingerprint = make([]string, len(scope.fingerprint))
+		copy(event.Fingerprint, scope.fingerprint)
 	}
 
 	if scope.level != "" {

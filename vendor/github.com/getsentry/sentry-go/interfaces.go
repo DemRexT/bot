@@ -28,15 +28,6 @@ const (
 	LevelFatal   Level = "fatal"
 )
 
-func getSensitiveHeaders() map[string]bool {
-	return map[string]bool{
-		"Authorization":   true,
-		"Cookie":          true,
-		"X-Forwarded-For": true,
-		"X-Real-Ip":       true,
-	}
-}
-
 // SdkInfo contains all metadata about about the SDK being used.
 type SdkInfo struct {
 	Name         string       `json:"name,omitempty"`
@@ -102,45 +93,10 @@ func (b *Breadcrumb) MarshalJSON() ([]byte, error) {
 // User describes the user associated with an Event. If this is used, at least
 // an ID or an IP address should be provided.
 type User struct {
-	ID        string            `json:"id,omitempty"`
-	Email     string            `json:"email,omitempty"`
-	IPAddress string            `json:"ip_address,omitempty"`
-	Username  string            `json:"username,omitempty"`
-	Name      string            `json:"name,omitempty"`
-	Segment   string            `json:"segment,omitempty"`
-	Data      map[string]string `json:"data,omitempty"`
-}
-
-func (u User) IsEmpty() bool {
-	if len(u.ID) > 0 {
-		return false
-	}
-
-	if len(u.Email) > 0 {
-		return false
-	}
-
-	if len(u.IPAddress) > 0 {
-		return false
-	}
-
-	if len(u.Username) > 0 {
-		return false
-	}
-
-	if len(u.Name) > 0 {
-		return false
-	}
-
-	if len(u.Segment) > 0 {
-		return false
-	}
-
-	if len(u.Data) > 0 {
-		return false
-	}
-
-	return true
+	Email     string `json:"email,omitempty"`
+	ID        string `json:"id,omitempty"`
+	IPAddress string `json:"ip_address,omitempty"`
+	Username  string `json:"username,omitempty"`
 }
 
 // Request contains information on a HTTP request related to the event.
@@ -165,36 +121,22 @@ func NewRequest(r *http.Request) *Request {
 	}
 	url := fmt.Sprintf("%s://%s%s", protocol, r.Host, r.URL.Path)
 
-	var cookies string
-	var env map[string]string
-	headers := map[string]string{}
+	// We read only the first Cookie header because of the specification:
+	// https://tools.ietf.org/html/rfc6265#section-5.4
+	// When the user agent generates an HTTP request, the user agent MUST NOT
+	// attach more than one Cookie header field.
+	cookies := r.Header.Get("Cookie")
 
-	if client := CurrentHub().Client(); client != nil {
-		if client.Options().SendDefaultPII {
-			// We read only the first Cookie header because of the specification:
-			// https://tools.ietf.org/html/rfc6265#section-5.4
-			// When the user agent generates an HTTP request, the user agent MUST NOT
-			// attach more than one Cookie header field.
-			cookies = r.Header.Get("Cookie")
-
-			for k, v := range r.Header {
-				headers[k] = strings.Join(v, ",")
-			}
-
-			if addr, port, err := net.SplitHostPort(r.RemoteAddr); err == nil {
-				env = map[string]string{"REMOTE_ADDR": addr, "REMOTE_PORT": port}
-			}
-		}
-	} else {
-		sensitiveHeaders := getSensitiveHeaders()
-		for k, v := range r.Header {
-			if _, ok := sensitiveHeaders[k]; !ok {
-				headers[k] = strings.Join(v, ",")
-			}
-		}
+	headers := make(map[string]string, len(r.Header))
+	for k, v := range r.Header {
+		headers[k] = strings.Join(v, ",")
 	}
-
 	headers["Host"] = r.Host
+
+	var env map[string]string
+	if addr, port, err := net.SplitHostPort(r.RemoteAddr); err == nil {
+		env = map[string]string{"REMOTE_ADDR": addr, "REMOTE_PORT": port}
+	}
 
 	return &Request{
 		URL:         url,
@@ -215,27 +157,14 @@ type Exception struct {
 	Stacktrace *Stacktrace `json:"stacktrace,omitempty"`
 }
 
-// SDKMetaData is a struct to stash data which is needed at some point in the SDK's event processing pipeline
-// but which shouldn't get send to Sentry.
-type SDKMetaData struct {
-	dsc DynamicSamplingContext
-}
-
-// Contains information about how the name of the transaction was determined.
-type TransactionInfo struct {
-	Source TransactionSource `json:"source,omitempty"`
-}
-
 // EventID is a hexadecimal string representing a unique uuid4 for an Event.
 // An EventID must be 32 characters long, lowercase and not have any dashes.
 type EventID string
 
-type Context = map[string]interface{}
-
 // Event is the fundamental data structure that is sent to Sentry.
 type Event struct {
 	Breadcrumbs []*Breadcrumb          `json:"breadcrumbs,omitempty"`
-	Contexts    map[string]Context     `json:"contexts,omitempty"`
+	Contexts    map[string]interface{} `json:"contexts,omitempty"`
 	Dist        string                 `json:"dist,omitempty"`
 	Environment string                 `json:"environment,omitempty"`
 	EventID     EventID                `json:"event_id,omitempty"`
@@ -259,14 +188,9 @@ type Event struct {
 
 	// The fields below are only relevant for transactions.
 
-	Type            string           `json:"type,omitempty"`
-	StartTime       time.Time        `json:"start_timestamp"`
-	Spans           []*Span          `json:"spans,omitempty"`
-	TransactionInfo *TransactionInfo `json:"transaction_info,omitempty"`
-
-	// The fields below are not part of the final JSON payload.
-
-	sdkMetaData SDKMetaData
+	Type      string    `json:"type,omitempty"`
+	StartTime time.Time `json:"start_timestamp"`
+	Spans     []*Span   `json:"spans,omitempty"`
 }
 
 // TODO: Event.Contexts map[string]interface{} => map[string]EventContext,
@@ -308,10 +232,9 @@ func (e *Event) defaultMarshalJSON() ([]byte, error) {
 		// be sent for transactions. They shadow the respective fields in Event
 		// and are meant to remain nil, triggering the omitempty behavior.
 
-		Type            json.RawMessage `json:"type,omitempty"`
-		StartTime       json.RawMessage `json:"start_timestamp,omitempty"`
-		Spans           json.RawMessage `json:"spans,omitempty"`
-		TransactionInfo json.RawMessage `json:"transaction_info,omitempty"`
+		Type      json.RawMessage `json:"type,omitempty"`
+		StartTime json.RawMessage `json:"start_timestamp,omitempty"`
+		Spans     json.RawMessage `json:"spans,omitempty"`
 	}
 
 	x := errorEvent{event: (*event)(e)}
@@ -363,7 +286,7 @@ func (e *Event) transactionMarshalJSON() ([]byte, error) {
 // NewEvent creates a new Event.
 func NewEvent() *Event {
 	event := Event{
-		Contexts: make(map[string]Context),
+		Contexts: make(map[string]interface{}),
 		Extra:    make(map[string]interface{}),
 		Tags:     make(map[string]string),
 		Modules:  make(map[string]string),

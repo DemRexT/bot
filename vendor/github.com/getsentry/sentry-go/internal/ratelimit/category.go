@@ -1,11 +1,6 @@
 package ratelimit
 
-import (
-	"strings"
-
-	"golang.org/x/text/cases"
-	"golang.org/x/text/language"
-)
+import "strings"
 
 // Reference:
 // https://github.com/getsentry/relay/blob/0424a2e017d193a93918053c90cdae9472d164bf/relay-common/src/constants.rs#L116-L127
@@ -36,11 +31,11 @@ func (c Category) String() string {
 	case "":
 		return "CategoryAll"
 	default:
-		caser := cases.Title(language.English)
-		rv := "Category"
+		var b strings.Builder
+		b.WriteString("Category")
 		for _, w := range strings.Fields(string(c)) {
-			rv += caser.String(w)
+			b.WriteString(strings.Title(w))
 		}
-		return rv
+		return b.String()
 	}
 }

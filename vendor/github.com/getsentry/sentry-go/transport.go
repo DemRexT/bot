@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"net/http"
 	"net/url"
 	"sync"
@@ -38,13 +39,11 @@ type Transport interface {
 
 func getProxyConfig(options ClientOptions) func(*http.Request) (*url.URL, error) {
 	if options.HTTPSProxy != "" {
-		return func(*http.Request) (*url.URL, error) {
+		return func(_ *http.Request) (*url.URL, error) {
 			return url.Parse(options.HTTPSProxy)
 		}
-	}
-
-	if options.HTTPProxy != "" {
-		return func(*http.Request) (*url.URL, error) {
+	} else if options.HTTPProxy != "" {
+		return func(_ *http.Request) (*url.URL, error) {
 			return url.Parse(options.HTTPProxy)
 		}
 	}
@@ -54,7 +53,7 @@ func getProxyConfig(options ClientOptions) func(*http.Request) (*url.URL, error)
 
 func getTLSConfig(options ClientOptions) *tls.Config {
 	if options.CaCerts != nil {
-		// #nosec G402 -- We should be using `MinVersion: tls.VersionTLS12`,
+		//#nosec G402 -- We should be using `MinVersion: tls.VersionTLS12`,
 		// 				 but we don't want to break peoples code without the major bump.
 		return &tls.Config{
 			RootCAs: options.CaCerts,
@@ -94,40 +93,21 @@ func getRequestBodyFromEvent(event *Event) []byte {
 	return nil
 }
 
-func transactionEnvelopeFromBody(event *Event, dsn *Dsn, sentAt time.Time, body json.RawMessage) (*bytes.Buffer, error) {
+func transactionEnvelopeFromBody(eventID EventID, sentAt time.Time, body json.RawMessage) (*bytes.Buffer, error) {
 	var b bytes.Buffer
 	enc := json.NewEncoder(&b)
-
-	// Construct the trace envelope header
-	var trace = map[string]string{}
-	if dsc := event.sdkMetaData.dsc; dsc.HasEntries() {
-		for k, v := range dsc.Entries {
-			trace[k] = v
-		}
-	}
-
-	// Envelope header
+	// envelope header
 	err := enc.Encode(struct {
-		EventID EventID           `json:"event_id"`
-		SentAt  time.Time         `json:"sent_at"`
-		Dsn     string            `json:"dsn"`
-		Sdk     map[string]string `json:"sdk"`
-		Trace   map[string]string `json:"trace,omitempty"`
+		EventID EventID   `json:"event_id"`
+		SentAt  time.Time `json:"sent_at"`
 	}{
-		EventID: event.EventID,
+		EventID: eventID,
 		SentAt:  sentAt,
-		Trace:   trace,
-		Dsn:     dsn.String(),
-		Sdk: map[string]string{
-			"name":    event.Sdk.Name,
-			"version": event.Sdk.Version,
-		},
 	})
 	if err != nil {
 		return nil, err
 	}
-
-	// Item header
+	// item header
 	err = enc.Encode(struct {
 		Type   string `json:"type"`
 		Length int    `json:"length"`
@@ -143,7 +123,6 @@ func transactionEnvelopeFromBody(event *Event, dsn *Dsn, sentAt time.Time, body 
 	if err != nil {
 		return nil, err
 	}
-
 	return &b, nil
 }
 
@@ -158,7 +137,7 @@ func getRequestFromEvent(event *Event, dsn *Dsn) (r *http.Request, err error) {
 		return nil, errors.New("event could not be marshaled")
 	}
 	if event.Type == transactionType {
-		b, err := transactionEnvelopeFromBody(event, dsn, time.Now(), body)
+		b, err := transactionEnvelopeFromBody(event.EventID, time.Now(), body)
 		if err != nil {
 			return nil, err
 		}
@@ -422,7 +401,7 @@ func (t *HTTPTransport) worker() {
 			t.mu.Unlock()
 			// Drain body up to a limit and close it, allowing the
 			// transport to reuse TCP connections.
-			_, _ = io.CopyN(io.Discard, response.Body, maxDrainResponseBytes)
+			_, _ = io.CopyN(ioutil.Discard, response.Body, maxDrainResponseBytes)
 			response.Body.Close()
 		}
 
@@ -550,7 +529,7 @@ func (t *HTTPSyncTransport) SendEvent(event *Event) {
 
 	// Drain body up to a limit and close it, allowing the
 	// transport to reuse TCP connections.
-	_, _ = io.CopyN(io.Discard, response.Body, maxDrainResponseBytes)
+	_, _ = io.CopyN(ioutil.Discard, response.Body, maxDrainResponseBytes)
 	response.Body.Close()
 }
 
@@ -577,16 +556,14 @@ func (t *HTTPSyncTransport) disabled(c ratelimit.Category) bool {
 // Only used internally when an empty DSN is provided, which effectively disables the SDK.
 type noopTransport struct{}
 
-var _ Transport = noopTransport{}
-
-func (noopTransport) Configure(ClientOptions) {
+func (t *noopTransport) Configure(options ClientOptions) {
 	Logger.Println("Sentry client initialized with an empty DSN. Using noopTransport. No events will be delivered.")
 }
 
-func (noopTransport) SendEvent(*Event) {
+func (t *noopTransport) SendEvent(event *Event) {
 	Logger.Println("Event dropped due to noopTransport usage.")
 }
 
-func (noopTransport) Flush(time.Duration) bool {
+func (t *noopTransport) Flush(_ time.Duration) bool {
 	return true
 }
