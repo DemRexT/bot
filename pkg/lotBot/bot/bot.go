@@ -209,7 +209,6 @@ func ModerationResponse(ctx context.Context, b *bot.Bot, update *models.Update) 
 				},
 			},
 		}
-
 	case "accept":
 		switch parts[3] {
 		case "Business":
