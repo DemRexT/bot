@@ -14,3 +14,4 @@ ApplicationName = "lotBot"
 
 [Bot]
 Token = ""
+AdminChatID = 0
