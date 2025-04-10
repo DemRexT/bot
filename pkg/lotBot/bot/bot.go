@@ -10,19 +10,37 @@ import (
 	"strings"
 )
 
-const AdminChatID = -4732218051
+type BotManager struct {
+	adminChatID int
+}
+
+func NewBotManager(adminChatID int) *BotManager {
+	return &BotManager{adminChatID: adminChatID}
+}
+
+const (
+	PatternStart            = "start"
+	PatternRole             = "role_"
+	PatternRegister         = "register_"
+	PatternSubmitModeration = "submit_for_moderation_"
+	PatternAction           = "action_"
+	PatternViewTask         = "view_tasks"
+	PatternReady            = "ready_"
+	PatternCall             = "call"
+	PatternNot              = "not_"
+)
 
 func StartHandler(ctx context.Context, b *bot.Bot, update *models.Update) {
 	kb := &models.InlineKeyboardMarkup{
 		InlineKeyboard: [][]models.InlineKeyboardButton{
 			{
-				{Text: "Предприниматель", CallbackData: "role_1"},
-				{Text: "Исполнитель", CallbackData: "role_2"},
+				{Text: "Предприниматель", CallbackData: PatternRole + "1"},
+				{Text: "Исполнитель", CallbackData: PatternRole + "2"},
 			},
 		},
 	}
 
-	if update.CallbackQuery != nil && update.CallbackQuery.Data == "start" {
+	if update.CallbackQuery != nil && update.CallbackQuery.Data == PatternStart {
 		_, err := b.AnswerCallbackQuery(ctx, &bot.AnswerCallbackQueryParams{
 			CallbackQueryID: update.CallbackQuery.ID,
 			ShowAlert:       false,
@@ -31,9 +49,9 @@ func StartHandler(ctx context.Context, b *bot.Bot, update *models.Update) {
 			return
 		}
 
-		// Вызываем ту же логику, что и для /start
-		_, err = b.SendMessage(ctx, &bot.SendMessageParams{
+		_, err = b.EditMessageText(ctx, &bot.EditMessageTextParams{
 			ChatID:      update.CallbackQuery.Message.Message.Chat.ID,
+			MessageID:   update.CallbackQuery.Message.Message.ID,
 			Text:        "Выберите роль",
 			ReplyMarkup: kb,
 		})
@@ -68,7 +86,7 @@ func CallbackHandler(ctx context.Context, b *bot.Bot, update *models.Update) {
 	var response string
 	var kb *models.InlineKeyboardMarkup
 	switch update.CallbackQuery.Data {
-	case "role_1":
+	case PatternRole + "1":
 		response = "Приветствие:\n✨ Добро пожаловать на EAZZY — сервис подросткового аутсорсинга!\n\n✔️ " +
 			"Возьмем ответственность за выполнение задачи на себя как полноценный бизнес-партнёр\n✔️ " +
 			"Подберем проверенных исполнителей, обучаем их и сопровождаем.\n✔️ " +
@@ -77,11 +95,11 @@ func CallbackHandler(ctx context.Context, b *bot.Bot, update *models.Update) {
 		kb = &models.InlineKeyboardMarkup{
 			InlineKeyboard: [][]models.InlineKeyboardButton{
 				{
-					{Text: "Зарегистрироваться", CallbackData: "register_Business"},
+					{Text: "Зарегистрироваться", CallbackData: PatternRegister + "Business"},
 				},
 			},
 		}
-	case "role_2":
+	case PatternRole + "2":
 		response = "Приветствие:\n✨ Добро пожаловать на EAZZY — сервис подросткового аутсорсинга!\n\n✔️ " +
 			"Поможем тебе сформулировать и описать твои умения и превратить их в доход\n✔️ " +
 			"Предоставим безопасные и честные рабочие возможности\n✔️ " +
@@ -89,7 +107,7 @@ func CallbackHandler(ctx context.Context, b *bot.Bot, update *models.Update) {
 		kb = &models.InlineKeyboardMarkup{
 			InlineKeyboard: [][]models.InlineKeyboardButton{
 				{
-					{Text: "Зарегистрироваться", CallbackData: "register_Teen"},
+					{Text: "Зарегистрироваться", CallbackData: PatternRegister + "Teen"},
 				},
 			},
 		}
@@ -97,8 +115,9 @@ func CallbackHandler(ctx context.Context, b *bot.Bot, update *models.Update) {
 		response = "Неизвестная команда: " + update.CallbackQuery.Data
 	}
 
-	_, err = b.SendMessage(ctx, &bot.SendMessageParams{
+	_, err = b.EditMessageText(ctx, &bot.EditMessageTextParams{
 		ChatID:      update.CallbackQuery.Message.Message.Chat.ID,
+		MessageID:   update.CallbackQuery.Message.Message.ID,
 		Text:        response,
 		ReplyMarkup: kb,
 	})
@@ -119,11 +138,11 @@ func Register(ctx context.Context, b *bot.Bot, update *models.Update) {
 
 	var response string
 	switch update.CallbackQuery.Data {
-	case "register_Business":
+	case PatternRegister + "Business":
 
 		response = "Регистрация заказчика"
 
-	case "register_Teen":
+	case PatternRegister + "Teen":
 		response = "Регистрация исполнителя"
 
 	default:
@@ -133,13 +152,14 @@ func Register(ctx context.Context, b *bot.Bot, update *models.Update) {
 	kb := &models.InlineKeyboardMarkup{
 		InlineKeyboard: [][]models.InlineKeyboardButton{
 			{
-				{Text: "Отправить на модерацию", CallbackData: "submit_for_moderation_" + update.CallbackQuery.Data},
+				{Text: "Отправить на модерацию", CallbackData: PatternSubmitModeration + update.CallbackQuery.Data},
 			},
 		},
 	}
 
-	_, err = b.SendMessage(ctx, &bot.SendMessageParams{
+	_, err = b.EditMessageText(ctx, &bot.EditMessageTextParams{
 		ChatID:      update.CallbackQuery.Message.Message.Chat.ID,
+		MessageID:   update.CallbackQuery.Message.Message.ID,
 		Text:        response,
 		ReplyMarkup: kb,
 	})
@@ -148,23 +168,28 @@ func Register(ctx context.Context, b *bot.Bot, update *models.Update) {
 	}
 }
 
-func Moderation(ctx context.Context, b *bot.Bot, update *models.Update) {
+func (bm BotManager) Moderation(ctx context.Context, b *bot.Bot, update *models.Update) {
 
 	userID := update.CallbackQuery.Message.Message.Chat.ID
 	parts := strings.Split(update.CallbackQuery.Data, "_")
+
+	if len(parts) < 5 {
+		log.Printf("не удалось отобразить карточку пользователя, len(parts) < 5\n")
+		return
+	}
 
 	kb := &models.InlineKeyboardMarkup{
 		InlineKeyboard: [][]models.InlineKeyboardButton{
 			{
 				{
 					Text:         "Принять",
-					CallbackData: "action_accept_" + strconv.FormatInt(userID, 10) + "_" + parts[4],
+					CallbackData: PatternAction + "accept_" + strconv.FormatInt(userID, 10) + "_" + parts[4],
 				},
 			},
 			{
 				{
 					Text:         "Отклонить",
-					CallbackData: "action_reject_" + strconv.FormatInt(userID, 10) + "_" + parts[4],
+					CallbackData: PatternAction + "reject_" + strconv.FormatInt(userID, 10) + "_" + parts[4],
 				},
 			},
 		},
@@ -184,13 +209,19 @@ func Moderation(ctx context.Context, b *bot.Bot, update *models.Update) {
 	}
 
 	_, err := b.SendMessage(ctx, &bot.SendMessageParams{
-		ChatID:      AdminChatID,
+		ChatID:      bm.adminChatID,
 		Text:        response,
 		ReplyMarkup: kb,
 	})
 	if err != nil {
 		log.Printf("Ошибка отправки сообщения: %v", err)
 	}
+
+	_, err = b.EditMessageText(ctx, &bot.EditMessageTextParams{
+		ChatID:    update.CallbackQuery.Message.Message.Chat.ID,
+		MessageID: update.CallbackQuery.Message.Message.ID,
+		Text:      "Заявка на модерацию отправлена",
+	})
 }
 
 func ModerationResponse(ctx context.Context, b *bot.Bot, update *models.Update) {
@@ -204,15 +235,20 @@ func ModerationResponse(ctx context.Context, b *bot.Bot, update *models.Update) 
 	}
 	parts := strings.Split(update.CallbackQuery.Data, "_")
 
+	if len(parts) < 4 {
+		log.Printf("не удалось отобразить карточку пользователя, len(parts) < 4\n")
+		return
+	}
+
 	actionID, err := strconv.Atoi(parts[2])
 	if err != nil {
 		log.Printf("Проблема с ID: %v", err)
 		return
 	}
 
-	//"action_reject_" + strconv.FormatInt(userID, 10) + "_" + parts[4]
 	var kb *models.InlineKeyboardMarkup
 	var response string
+	var responceAdmin string
 	switch parts[1] {
 	case "reject":
 
@@ -220,17 +256,21 @@ func ModerationResponse(ctx context.Context, b *bot.Bot, update *models.Update) 
 			"Были введены некорректные или недостоверные данные.\n" +
 			"Пожалуйста, вернись к первому шагу и проверь, не допущена ли ошибка"
 
+		responceAdmin = "Пользователь отклонен"
+
 		kb = &models.InlineKeyboardMarkup{
 			InlineKeyboard: [][]models.InlineKeyboardButton{
 				{
 					{
 						Text:         "Вернутся назад",
-						CallbackData: "start",
+						CallbackData: PatternStart,
 					},
 				},
 			},
 		}
 	case "accept":
+
+		responceAdmin = "Пользователь подтвержден"
 		switch parts[3] {
 		case "Business":
 			response = "Модерация пройдена!\n\nХотите разместить первое задание?"
@@ -255,7 +295,7 @@ func ModerationResponse(ctx context.Context, b *bot.Bot, update *models.Update) 
 					{
 						{
 							Text:         "Посмотрим",
-							CallbackData: "view_tasks",
+							CallbackData: PatternViewTask,
 						},
 					},
 				},
@@ -275,6 +315,15 @@ func ModerationResponse(ctx context.Context, b *bot.Bot, update *models.Update) 
 		log.Printf("Ошибка отправки сообщения: %v", err)
 	}
 
+	_, err = b.EditMessageText(ctx, &bot.EditMessageTextParams{
+		ChatID:    update.CallbackQuery.Message.Message.Chat.ID,
+		MessageID: update.CallbackQuery.Message.Message.ID,
+		Text:      responceAdmin,
+	})
+	if err != nil {
+		log.Printf("Ошибка отправки сообщения: %v", err)
+	}
+
 }
 
 func ViewTasks(ctx context.Context, b *bot.Bot, update *models.Update) {
@@ -289,14 +338,15 @@ func ViewTasks(ctx context.Context, b *bot.Bot, update *models.Update) {
 	kb := &models.InlineKeyboardMarkup{
 		InlineKeyboard: [][]models.InlineKeyboardButton{
 			{
-				{Text: "Готов", CallbackData: "ready_yes"},
-				{Text: "Не готов", CallbackData: "ready_not"},
+				{Text: "Готов", CallbackData: PatternReady + "yes"},
+				{Text: "Не готов", CallbackData: PatternReady + "not"},
 			},
 		},
 	}
 
-	_, err = b.SendMessage(ctx, &bot.SendMessageParams{
-		ChatID: update.CallbackQuery.Message.Message.Chat.ID,
+	_, err = b.EditMessageText(ctx, &bot.EditMessageTextParams{
+		ChatID:    update.CallbackQuery.Message.Message.Chat.ID,
+		MessageID: update.CallbackQuery.Message.Message.ID,
 		Text: "У нас есть для тебя задание!\nПожалуйста. ознакомься с заданием.\n" +
 			"Срок для изучения задания - до ЧЧ.ММ ДД.ММ\n" +
 			"Пришлем напоминалку поле этого срока и уточним готовность.\n" +
@@ -322,27 +372,27 @@ func StudentReadiness(ctx context.Context, b *bot.Bot, update *models.Update) {
 	var response string
 	var kb *models.InlineKeyboardMarkup
 	switch update.CallbackQuery.Data {
-	case "ready_yes":
+	case PatternReady + "yes":
 		response = "Отлично!\nДавай назначим созвон с заказчиком длявыяснения деталей,затем ты сможеш приступить"
 		kb = &models.InlineKeyboardMarkup{
 			InlineKeyboard: [][]models.InlineKeyboardButton{
 				{
-					{Text: "Окей", CallbackData: "call"},
+					{Text: "Окей", CallbackData: PatternCall},
 				},
 			},
 		}
-	case "ready_not":
+	case PatternReady + "not":
 		response = "Подскажи, почему именно:"
 		kb = &models.InlineKeyboardMarkup{
 			InlineKeyboard: [][]models.InlineKeyboardButton{
 				{
-					{Text: "еще занят с предыдущей задачей", CallbackData: "not_busy"},
+					{Text: "еще занят с предыдущей задачей", CallbackData: PatternNot + "busy"},
 				},
 				{
-					{Text: "задача мне не интересна", CallbackData: "not_interesting"},
+					{Text: "задача мне не интересна", CallbackData: PatternNot + "interesting"},
 				},
 				{
-					{Text: "не понял задание и/или не уверен, что справлюсь", CallbackData: "not_understand"},
+					{Text: "не понял задание и/или не уверен, что справлюсь", CallbackData: PatternNot + "understand"},
 				},
 			},
 		}
@@ -350,8 +400,9 @@ func StudentReadiness(ctx context.Context, b *bot.Bot, update *models.Update) {
 		response = "Неизвестная команда: " + update.CallbackQuery.Data
 	}
 
-	_, err = b.SendMessage(ctx, &bot.SendMessageParams{
+	_, err = b.EditMessageText(ctx, &bot.EditMessageTextParams{
 		ChatID:      update.CallbackQuery.Message.Message.Chat.ID,
+		MessageID:   update.CallbackQuery.Message.Message.ID,
 		Text:        response,
 		ReplyMarkup: kb,
 	})
@@ -360,7 +411,7 @@ func StudentReadiness(ctx context.Context, b *bot.Bot, update *models.Update) {
 	}
 }
 
-func Call(ctx context.Context, b *bot.Bot, update *models.Update) {
+func (bm BotManager) Call(ctx context.Context, b *bot.Bot, update *models.Update) {
 	_, err := b.AnswerCallbackQuery(ctx, &bot.AnswerCallbackQueryParams{
 		CallbackQueryID: update.CallbackQuery.ID,
 		ShowAlert:       false,
@@ -377,8 +428,9 @@ func Call(ctx context.Context, b *bot.Bot, update *models.Update) {
 		},
 	}
 
-	_, err = b.SendMessage(ctx, &bot.SendMessageParams{
+	_, err = b.EditMessageText(ctx, &bot.EditMessageTextParams{
 		ChatID:      update.CallbackQuery.Message.Message.Chat.ID,
+		MessageID:   update.CallbackQuery.Message.Message.ID,
 		Text:        "Отлично! Давай назначим созвон",
 		ReplyMarkup: kb,
 	})
@@ -387,7 +439,7 @@ func Call(ctx context.Context, b *bot.Bot, update *models.Update) {
 	}
 
 	_, err = b.SendMessage(ctx, &bot.SendMessageParams{
-		ChatID: AdminChatID,
+		ChatID: bm.adminChatID,
 		Text:   "Запрос на новый созвон от пользователя!",
 	})
 	if err != nil {
@@ -406,6 +458,11 @@ func NotReady(ctx context.Context, b *bot.Bot, update *models.Update) {
 	}
 
 	parts := strings.Split(update.CallbackQuery.Data, "_")
+
+	if len(parts) < 2 {
+		log.Printf("не удалось отобразить карточку пользователя, len(parts) < 2\n")
+		return
+	}
 	var kb *models.InlineKeyboardMarkup
 	var response string
 	switch parts[1] {
@@ -414,7 +471,7 @@ func NotReady(ctx context.Context, b *bot.Bot, update *models.Update) {
 		kb = &models.InlineKeyboardMarkup{
 			InlineKeyboard: [][]models.InlineKeyboardButton{
 				{
-					{Text: "Да", CallbackData: "call_you"},
+					{Text: "Да", CallbackData: PatternCall},
 					{Text: "Нет", CallbackData: "following_tasks"},
 				},
 			},
@@ -425,6 +482,8 @@ func NotReady(ctx context.Context, b *bot.Bot, update *models.Update) {
 			InlineKeyboard: [][]models.InlineKeyboardButton{
 				{
 					{Text: "Да, не моё направление", CallbackData: "_"},
+				},
+				{
 					{Text: "Нет, отправляйте другие, не зашло именно это", CallbackData: "_"},
 				},
 			},
@@ -434,7 +493,9 @@ func NotReady(ctx context.Context, b *bot.Bot, update *models.Update) {
 		kb = &models.InlineKeyboardMarkup{
 			InlineKeyboard: [][]models.InlineKeyboardButton{
 				{
-					{Text: "да, пожалуйста  (связь в личке или созвон)", CallbackData: "call_you"},
+					{Text: "да, пожалуйста  (связь в личке или созвон)", CallbackData: PatternCall},
+				},
+				{
 					{Text: "нет, спасибо", CallbackData: "following_tasks"},
 				},
 			},
@@ -443,8 +504,9 @@ func NotReady(ctx context.Context, b *bot.Bot, update *models.Update) {
 		response = "Неизвестная команда: " + update.CallbackQuery.Data
 	}
 
-	_, err = b.SendMessage(ctx, &bot.SendMessageParams{
+	_, err = b.EditMessageText(ctx, &bot.EditMessageTextParams{
 		ChatID:      update.CallbackQuery.Message.Message.Chat.ID,
+		MessageID:   update.CallbackQuery.Message.Message.ID,
 		Text:        response,
 		ReplyMarkup: kb,
 	})
