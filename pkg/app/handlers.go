@@ -2,6 +2,8 @@ package app
 
 import (
 	"fmt"
+	"github.com/go-telegram/bot/models"
+	"io"
 	"net/http"
 	_ "net/http/pprof"
 
@@ -66,8 +68,67 @@ func (a *App) registerAPIHandlers() {
 	srv := rpc.New(a.db, a.Logger, a.cfg.Server.IsDevel)
 	gen := rpcgen.FromSMD(srv.SMD())
 
+	a.echo.Any("/formresulstudent", a.handleFormResultStudent)
+	a.echo.Any("/formresultbusines", a.handleFormResultBusines)
+	a.echo.Any("/formresultlot", a.handleFormResultLot)
+
 	a.echo.Any("/v1/rpc/", zm.EchoHandler(zm.XRequestID(srv)))
 	a.echo.Any("/v1/rpc/doc/", echo.WrapHandler(http.HandlerFunc(zenrpc.SMDBoxHandler)))
 	a.echo.Any("/v1/rpc/openrpc.json", echo.WrapHandler(http.HandlerFunc(rpcgen.Handler(gen.OpenRPC("apisrv", "http://localhost:8075/v1/rpc")))))
 	a.echo.Any("/v1/rpc/api.ts", echo.WrapHandler(http.HandlerFunc(rpcgen.Handler(gen.TSClient(nil)))))
+}
+
+func (a *App) handleFormResultStudent(c echo.Context) error {
+
+	body, err := io.ReadAll(c.Request().Body)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{
+			"error": "Ошибка чтения тела запроса",
+		})
+	}
+
+	update := &models.Update{
+		CallbackQuery: &models.CallbackQuery{
+			Data: string(body),
+		},
+	}
+	a.bm.ModerationStudent(c.Request().Context(), a.b, update)
+
+	return c.JSON(http.StatusOK, map[string]string{"status": "Данные переданы на модерацию"})
+}
+
+func (a *App) handleFormResultBusines(c echo.Context) error {
+	body, err := io.ReadAll(c.Request().Body)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{
+			"error": "Ошибка чтения тела запроса",
+		})
+	}
+
+	update := &models.Update{
+		CallbackQuery: &models.CallbackQuery{
+			Data: string(body),
+		},
+	}
+	a.bm.ModerationBusines(c.Request().Context(), a.b, update)
+
+	return c.JSON(http.StatusOK, map[string]string{"status": "Данные переданы на модерацию"})
+}
+
+func (a *App) handleFormResultLot(c echo.Context) error {
+	body, err := io.ReadAll(c.Request().Body)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{
+			"error": "Ошибка чтения тела запроса",
+		})
+	}
+
+	update := &models.Update{
+		CallbackQuery: &models.CallbackQuery{
+			Data: string(body),
+		},
+	}
+	a.bm.ModerationTask(c.Request().Context(), a.b, update)
+
+	return c.JSON(http.StatusOK, map[string]string{"status": "Данные переданы на модерацию"})
 }

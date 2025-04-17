@@ -37,6 +37,7 @@ type App struct {
 	echo    *echo.Echo
 	b       *bot.Bot
 	bm      *botLogic.BotManager
+	bot     *bot.Bot
 }
 
 func New(appName string, verbose bool, cfg Config, db db.DB, dbc *pg.DB) *App {
