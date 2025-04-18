@@ -53,7 +53,7 @@ func New(appName string, verbose bool, cfg Config, db db.DB, dbc *pg.DB) *App {
 	a.echo.HidePort = true
 	a.echo.IPExtractor = echo.ExtractIPFromRealIPHeader()
 
-	a.bm = botLogic.NewBotManager(a.cfg.Bot.AdminChatID)
+	a.bm = botLogic.NewBotManager(a.Logger, a.cfg.Bot.AdminChatID)
 
 	b, err := bot.New(cfg.Bot.Token)
 	if err != nil {

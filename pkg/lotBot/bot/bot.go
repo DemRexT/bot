@@ -7,16 +7,21 @@ import (
 	"github.com/go-telegram/bot"
 	"github.com/go-telegram/bot/models"
 	"log"
+	"lotBot/pkg/embedlog"
 	"strconv"
 	"strings"
 )
 
 type BotManager struct {
+	embedlog.Logger
 	adminChatID int
 }
 
-func NewBotManager(adminChatID int) *BotManager {
-	return &BotManager{adminChatID: adminChatID}
+func NewBotManager(logger embedlog.Logger, adminChatID int) *BotManager {
+	return &BotManager{
+		Logger:      logger,
+		adminChatID: adminChatID,
+	}
 }
 
 const (
