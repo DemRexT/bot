@@ -2,6 +2,8 @@ package app
 
 import (
 	"fmt"
+	"github.com/go-telegram/bot/models"
+	"io"
 	"net/http"
 	_ "net/http/pprof"
 
@@ -13,6 +15,12 @@ import (
 	"github.com/vmkteam/rpcgen/v2"
 	zm "github.com/vmkteam/zenrpc-middleware"
 	"github.com/vmkteam/zenrpc/v2"
+)
+
+const (
+	RouteSubmitStudentForm  = "/formstudent"
+	RouteSubmitBusinessForm = "/formbusiness"
+	RouteSubmitLotForm      = "/formlot"
 )
 
 // runHTTPServer is a function that starts http listener using labstack/echo.
@@ -66,8 +74,42 @@ func (a *App) registerAPIHandlers() {
 	srv := rpc.New(a.db, a.Logger, a.cfg.Server.IsDevel)
 	gen := rpcgen.FromSMD(srv.SMD())
 
+	a.echo.Any(RouteSubmitStudentForm, a.handleFormResult)
+	a.echo.Any(RouteSubmitBusinessForm, a.handleFormResult)
+	a.echo.Any(RouteSubmitLotForm, a.handleFormResult)
+
 	a.echo.Any("/v1/rpc/", zm.EchoHandler(zm.XRequestID(srv)))
 	a.echo.Any("/v1/rpc/doc/", echo.WrapHandler(http.HandlerFunc(zenrpc.SMDBoxHandler)))
 	a.echo.Any("/v1/rpc/openrpc.json", echo.WrapHandler(http.HandlerFunc(rpcgen.Handler(gen.OpenRPC("apisrv", "http://localhost:8075/v1/rpc")))))
 	a.echo.Any("/v1/rpc/api.ts", echo.WrapHandler(http.HandlerFunc(rpcgen.Handler(gen.TSClient(nil)))))
+}
+
+func (a *App) handleFormResult(c echo.Context) error {
+	body, err := io.ReadAll(c.Request().Body)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{
+			"error": "Ошибка чтения тела запроса",
+		})
+	}
+
+	update := &models.Update{
+		CallbackQuery: &models.CallbackQuery{
+			Data: string(body),
+		},
+	}
+
+	switch c.Path() {
+	case RouteSubmitStudentForm:
+		a.bm.ModerationStudent(c.Request().Context(), a.b, update)
+	case RouteSubmitBusinessForm:
+		a.bm.ModerationBusines(c.Request().Context(), a.b, update)
+	case RouteSubmitLotForm:
+		a.bm.ModerationTask(c.Request().Context(), a.b, update)
+	default:
+		return c.JSON(http.StatusNotFound, map[string]string{
+			"error": "Неизвестный путь",
+		})
+	}
+
+	return c.JSON(http.StatusOK, map[string]string{"status": "Данные переданы на модерацию"})
 }
