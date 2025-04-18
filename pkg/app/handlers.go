@@ -17,6 +17,12 @@ import (
 	"github.com/vmkteam/zenrpc/v2"
 )
 
+const (
+	RouteSubmitStudentForm  = "/formstudent"
+	RouteSubmitBusinessForm = "/formbusiness"
+	RouteSubmitLotForm      = "/formlot"
+)
+
 // runHTTPServer is a function that starts http listener using labstack/echo.
 func (a *App) runHTTPServer(host string, port int) error {
 	listenAddress := fmt.Sprintf("%s:%d", host, port)
@@ -68,9 +74,9 @@ func (a *App) registerAPIHandlers() {
 	srv := rpc.New(a.db, a.Logger, a.cfg.Server.IsDevel)
 	gen := rpcgen.FromSMD(srv.SMD())
 
-	a.echo.Any("/formresulstudent", a.handleFormResultStudent)
-	a.echo.Any("/formresultbusines", a.handleFormResultBusines)
-	a.echo.Any("/formresultlot", a.handleFormResultLot)
+	a.echo.Any(RouteSubmitStudentForm, a.handleFormResult)
+	a.echo.Any(RouteSubmitBusinessForm, a.handleFormResult)
+	a.echo.Any(RouteSubmitLotForm, a.handleFormResult)
 
 	a.echo.Any("/v1/rpc/", zm.EchoHandler(zm.XRequestID(srv)))
 	a.echo.Any("/v1/rpc/doc/", echo.WrapHandler(http.HandlerFunc(zenrpc.SMDBoxHandler)))
@@ -78,8 +84,7 @@ func (a *App) registerAPIHandlers() {
 	a.echo.Any("/v1/rpc/api.ts", echo.WrapHandler(http.HandlerFunc(rpcgen.Handler(gen.TSClient(nil)))))
 }
 
-func (a *App) handleFormResultStudent(c echo.Context) error {
-
+func (a *App) handleFormResult(c echo.Context) error {
 	body, err := io.ReadAll(c.Request().Body)
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, map[string]string{
@@ -92,43 +97,19 @@ func (a *App) handleFormResultStudent(c echo.Context) error {
 			Data: string(body),
 		},
 	}
-	a.bm.ModerationStudent(c.Request().Context(), a.b, update)
 
-	return c.JSON(http.StatusOK, map[string]string{"status": "Данные переданы на модерацию"})
-}
-
-func (a *App) handleFormResultBusines(c echo.Context) error {
-	body, err := io.ReadAll(c.Request().Body)
-	if err != nil {
-		return c.JSON(http.StatusBadRequest, map[string]string{
-			"error": "Ошибка чтения тела запроса",
+	switch c.Path() {
+	case RouteSubmitStudentForm:
+		a.bm.ModerationStudent(c.Request().Context(), a.b, update)
+	case RouteSubmitBusinessForm:
+		a.bm.ModerationBusines(c.Request().Context(), a.b, update)
+	case RouteSubmitLotForm:
+		a.bm.ModerationTask(c.Request().Context(), a.b, update)
+	default:
+		return c.JSON(http.StatusNotFound, map[string]string{
+			"error": "Неизвестный путь",
 		})
 	}
-
-	update := &models.Update{
-		CallbackQuery: &models.CallbackQuery{
-			Data: string(body),
-		},
-	}
-	a.bm.ModerationBusines(c.Request().Context(), a.b, update)
-
-	return c.JSON(http.StatusOK, map[string]string{"status": "Данные переданы на модерацию"})
-}
-
-func (a *App) handleFormResultLot(c echo.Context) error {
-	body, err := io.ReadAll(c.Request().Body)
-	if err != nil {
-		return c.JSON(http.StatusBadRequest, map[string]string{
-			"error": "Ошибка чтения тела запроса",
-		})
-	}
-
-	update := &models.Update{
-		CallbackQuery: &models.CallbackQuery{
-			Data: string(body),
-		},
-	}
-	a.bm.ModerationTask(c.Request().Context(), a.b, update)
 
 	return c.JSON(http.StatusOK, map[string]string{"status": "Данные переданы на модерацию"})
 }

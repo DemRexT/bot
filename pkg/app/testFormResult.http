@@ -12,7 +12,7 @@ Content-Type: application/json
 }
 
 ### Отправка данных компании
-POST localhost:8075/formresultbusines
+POST localhost:8075/formresultbusiness
 Content-Type: application/json
 
 {
