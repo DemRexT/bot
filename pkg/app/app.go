@@ -34,13 +34,15 @@ type App struct {
 	dbc     *pg.DB
 	echo    *echo.Echo
 	b       *bot.Bot
+
+	lotBotRepo db.LotbotRepo
 }
 
-func New(appName string, verbose bool, cfg Config, db db.DB, dbc *pg.DB) *App {
+func New(appName string, verbose bool, cfg Config, dbo db.DB, dbc *pg.DB) *App {
 	a := &App{
 		appName: appName,
 		cfg:     cfg,
-		db:      db,
+		db:      dbo,
 		dbc:     dbc,
 		echo:    echo.New(),
 	}
@@ -48,6 +50,8 @@ func New(appName string, verbose bool, cfg Config, db db.DB, dbc *pg.DB) *App {
 	a.echo.HideBanner = true
 	a.echo.HidePort = true
 	a.echo.IPExtractor = echo.ExtractIPFromRealIPHeader()
+
+	a.lotBotRepo = db.NewLotbotRepo(dbo)
 
 	b, err := bot.New(cfg.Bot.Token)
 	if err != nil {
