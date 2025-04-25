@@ -7,41 +7,24 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"github.com/go-pg/pg/v10"
-	"github.com/go-telegram/bot"
-	"github.com/labstack/echo/v4"
 	"io"
-	"lotBot/pkg/db"
 	"lotBot/pkg/embedlog"
 	"net/http"
 	"time"
 )
 
 type Config struct {
-	Database *pg.Options
-	Server   struct {
-		Host      string
-		Port      int
-		IsDevel   bool
-		EnableVFS bool
-	}
-	Bot struct {
-		Token string
-	}
-	Invoice struct {
-		SecretKey  string
-		MerchantID string
-	}
+	SecretKey  string
+	MerchantID string
 }
 
-type App struct {
+type InvoiceClient struct {
 	embedlog.Logger
-	appName string
-	cfg     Config
-	db      db.DB
-	dbc     *pg.DB
-	echo    *echo.Echo
-	b       *bot.Bot
+	cfg Config
+}
+
+func NewInvoiceClient(logger embedlog.Logger, cfg Config) *InvoiceClient {
+	return &InvoiceClient{Logger: logger, cfg: cfg}
 }
 
 // generateSignature is a helper function that generates an HMAC SHA-256 signature.
@@ -53,7 +36,7 @@ func generateSignature(secretKey string, body []byte) string {
 
 const url = "https://api.invoicebox.ru/v3/billing/api/order/order"
 
-func (a *App) AskApi() {
+func (ic *InvoiceClient) AskApi() error {
 
 	type BasketItem struct {
 		SKU            string  `json:"sku"`
@@ -114,14 +97,16 @@ func (a *App) AskApi() {
 
 	jsonData, err := json.Marshal(order)
 	if err != nil {
-		panic(err)
+		ic.Errorf("%v", err)
+		return err
 	}
 
 	signature := generateSignature(secretKey, jsonData)
 
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonData))
 	if err != nil {
-		panic(err)
+		ic.Errorf("%v", err)
+		return err
 	}
 
 	req.Header.Set("X-Signature", signature)
@@ -137,15 +122,18 @@ func (a *App) AskApi() {
 	defer func(Body io.ReadCloser) {
 		err := Body.Close()
 		if err != nil {
-
+			ic.Errorf("%v", err)
 		}
 	}(resp.Body)
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		panic(err)
+		ic.Errorf("%v", err)
+		return err
 	}
 
 	fmt.Printf("Status: %s\n", resp.Status)
 	fmt.Printf("Response: %s\n", string(body))
+
+	return nil
 }

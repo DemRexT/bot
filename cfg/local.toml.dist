@@ -14,3 +14,7 @@ ApplicationName = "lotBot"
 
 [Bot]
 Token = ""
+
+[InvoiceConfig]
+SecretKey  = ""
+MerchantID = ""
