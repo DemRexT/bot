@@ -1,5 +1,5 @@
 ### Отправка данных студента
-POST localhost:8075/formresulstudent
+POST localhost:8075/formstudent
 Content-Type: application/json
 
 {
@@ -12,7 +12,7 @@ Content-Type: application/json
 }
 
 ### Отправка данных компании
-POST localhost:8075/formresultbusiness
+POST localhost:8075/formbusiness
 Content-Type: application/json
 
 {
@@ -25,11 +25,13 @@ Content-Type: application/json
 }
 
 ### Отправка данных при создании лота
-POST localhost:8075/formresultlot
+POST localhost:8075/formlot
 Content-Type: application/json
 
 {
   "tgId":"1098511932",
+  "nameTask":"Название",
+  "direction": "Направление задач",
   "description":"123",
   "IMG":["14iNJPXyMRXemoHCBS7vjwegTyZO89GB0"],
   "Link":"https://docs.google.com/forms/d/e/1FAIpQLScQgB6T74K87rZHi8a9qi-l565V3rrO5sKUlHe9LStZiRM3YA/",

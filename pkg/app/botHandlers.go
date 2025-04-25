@@ -16,4 +16,5 @@ func (a *App) registerBotHandlers() {
 	a.b.RegisterHandler(botLib.HandlerTypeCallbackQueryData, bot.PatternCall, botLib.MatchTypePrefix, a.bm.Call)
 	a.b.RegisterHandler(botLib.HandlerTypeCallbackQueryData, bot.PatternNot, botLib.MatchTypePrefix, a.bm.NotReady)
 	a.b.RegisterHandler(botLib.HandlerTypeCallbackQueryData, bot.PatternCreateTask, botLib.MatchTypePrefix, a.bm.CreateTask)
+	a.b.RegisterHandler(botLib.HandlerTypeCallbackQueryData, bot.PatternLater, botLib.MatchTypePrefix, a.bm.Later)
 }
