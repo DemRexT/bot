@@ -1,0 +1,38 @@
+### Отправка данных студента
+POST localhost:8075/formresulstudent
+Content-Type: application/json
+
+{
+  "tgId": "1098511932",
+  "Name": "Данила",
+  "birthday": "22.34.43",
+  "city": "234234",
+  "skill": "Вариант 11",
+  "email": "23141234"
+}
+
+### Отправка данных компании
+POST localhost:8075/formresultbusiness
+Content-Type: application/json
+
+{
+  "tgId": "1098511932",
+  "CompanyName": "123",
+  "INN": "123",
+  "FieldOfActivity": "Финансы / бухгалтерия",
+  "ContactPersonFullName": "123",
+  "ContactPersonPhone": "123"
+}
+
+### Отправка данных при создании лота
+POST localhost:8075/formresultlot
+Content-Type: application/json
+
+{
+  "tgId":"1098511932",
+  "description":"123",
+  "IMG":["14iNJPXyMRXemoHCBS7vjwegTyZO89GB0"],
+  "Link":"https://docs.google.com/forms/d/e/1FAIpQLScQgB6T74K87rZHi8a9qi-l565V3rrO5sKUlHe9LStZiRM3YA/",
+  "deadline":"345",
+  "slotCall":"345"
+}

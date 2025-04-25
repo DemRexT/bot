@@ -14,6 +14,7 @@ ApplicationName = "lotBot"
 
 [Bot]
 Token = ""
+AdminChatID = 0
 
 [InvoiceConfig]
 SecretKey  = ""

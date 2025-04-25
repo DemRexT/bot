@@ -10,6 +10,7 @@ import (
 
 	"lotBot/pkg/db"
 	"lotBot/pkg/embedlog"
+	botLogic "lotBot/pkg/lotBot/bot"
 
 	"github.com/go-pg/pg/v10"
 	"github.com/go-telegram/bot"
@@ -26,7 +27,8 @@ type Config struct {
 		EnableVFS bool
 	}
 	Bot struct {
-		Token string
+		Token       string
+		AdminChatID int
 	}
 	InvoiceConfig invoicebox.Config
 }
@@ -46,6 +48,8 @@ type App struct {
 	dbc     *pg.DB
 	echo    *echo.Echo
 	b       *bot.Bot
+	bm      *botLogic.BotManager
+	bot     *bot.Bot
 	ic      *invoicebox.InvoiceClient
 }
 
@@ -61,6 +65,8 @@ func New(appName string, verbose bool, cfg Config, db db.DB, dbc *pg.DB) *App {
 	a.echo.HideBanner = true
 	a.echo.HidePort = true
 	a.echo.IPExtractor = echo.ExtractIPFromRealIPHeader()
+
+	a.bm = botLogic.NewBotManager(a.Logger, a.cfg.Bot.AdminChatID)
 
 	b, err := bot.New(cfg.Bot.Token)
 	if err != nil {
