@@ -1,0 +1,16 @@
+[Server]
+Host      = "localhost"
+Port      = 8075
+IsDevel   = true
+EnableVFS = true
+
+[Database]
+Addr            = "localhost:5432"
+User            = "postgres"
+Database        = "postgres"
+Password        = ""
+PoolSize        = 5
+ApplicationName = "lotBot"
+
+[Bot]
+Token = ""
