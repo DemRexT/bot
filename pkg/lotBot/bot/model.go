@@ -19,7 +19,9 @@ type BusinesData struct {
 }
 
 type TaskData struct {
-	Tgid        string   `json:"tgId"`
+	TgId        string   `json:"tgId"`
+	NameTask    string   `json:"nameTask"`
+	Direction   string   `json:"direction"`
 	Description string   `json:"description"`
 	IMG         []string `json:"IMG"`
 	Link        string   `json:"Link"`

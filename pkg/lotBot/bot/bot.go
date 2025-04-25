@@ -35,9 +35,11 @@ const (
 	PatternCall             = "call"
 	PatternNot              = "not_"
 	PatternCreateTask       = "create_task"
+	PatternLater            = "later"
 	UrlRegisterStudent      = "https://docs.google.com/forms/d/e/1FAIpQLSemsbNWCx2ewY25WlvQP_baBef6RUs1jF0w1p4obb99ieXFAw/viewform?usp=pp_url&entry.1082496981="
 	UrlRegisterBusiness     = "https://docs.google.com/forms/d/e/1FAIpQLSdz5iYc9UB6M3wOOrGGl-4jTywltlkl7AZgqXrNKIBqrY87mA/viewform?usp=pp_url&entry.213949143="
 	UrlCreateTask           = "https://docs.google.com/forms/d/e/1FAIpQLScQgB6T74K87rZHi8a9qi-l565V3rrO5sKUlHe9LStZiRM3YA/viewform?usp=pp_url&entry.995903952="
+	UrlTelegrammChat        = "https://web.telegram.org/a/#"
 )
 
 func (bm BotManager) StartHandler(ctx context.Context, b *bot.Bot, update *models.Update) {
@@ -367,7 +369,7 @@ func (bm BotManager) ModerationResponse(ctx context.Context, b *bot.Bot, update 
 						},
 						{
 							Text:         "Позже",
-							CallbackData: "later",
+							CallbackData: PatternLater,
 						},
 					},
 				},
@@ -653,7 +655,7 @@ func (bm BotManager) ModerationTask(ctx context.Context, b *bot.Bot, update *mod
 	}
 
 	response := fmt.Sprintf(ResponceTaskModeration,
-		data.Description, data.Deadline, data.SlotCall)
+		data.NameTask, data.Direction, data.Description, data.Deadline, data.SlotCall)
 	var kb *models.InlineKeyboardMarkup
 	if data.Link != "" {
 		kb = &models.InlineKeyboardMarkup{
@@ -662,6 +664,10 @@ func (bm BotManager) ModerationTask(ctx context.Context, b *bot.Bot, update *mod
 					{
 						Text: "Файлы к лоту",
 						URL:  data.Link,
+					},
+					{
+						Text: "создатель",
+						URL:  UrlTelegrammChat + data.TgId,
 					},
 				},
 			},
@@ -681,5 +687,54 @@ func (bm BotManager) ModerationTask(ctx context.Context, b *bot.Bot, update *mod
 	_, err := b.SendMessage(ctx, params)
 	if err != nil {
 		bm.Errorf("Ошибка отправки сообщения: %v", err)
+	}
+}
+
+func (bm BotManager) Later(ctx context.Context, b *bot.Bot, update *models.Update) {
+
+	_, err := b.AnswerCallbackQuery(ctx, &bot.AnswerCallbackQueryParams{
+		CallbackQueryID: update.CallbackQuery.ID,
+		ShowAlert:       false,
+	})
+	if err != nil {
+		bm.Errorf("%v", err)
+	}
+
+	bm.Errorf("%v", update.CallbackQuery.Message.Message.Chat.ID)
+
+	_, err = b.EditMessageText(ctx, &bot.EditMessageTextParams{
+		ChatID:    update.CallbackQuery.Message.Message.Chat.ID,
+		MessageID: update.CallbackQuery.Message.Message.ID,
+		Text:      "Ок!\nКак будете готовы, выберите в меню пункт \"Разместить задание\"",
+	})
+
+	newCmd := models.BotCommand{
+		Command:     "place_task",
+		Description: "Создать задание",
+	}
+
+	_, err = b.SetChatMenuButton(ctx, &bot.SetChatMenuButtonParams{
+		ChatID:     update.CallbackQuery.Message.Message.Chat.ID,
+		MenuButton: models.MenuButtonCommands{Type: "commands"},
+	})
+	if err != nil {
+		bm.Errorf("Ошибка отправки сообщения: %v", err)
+		return
+	}
+
+	commands, err := b.GetMyCommands(ctx, &bot.GetMyCommandsParams{})
+	if err != nil {
+		bm.Errorf("Ошибка отправки сообщения: %v", err)
+		return
+	}
+
+	commands = append(commands, newCmd)
+
+	_, err = b.SetMyCommands(ctx, &bot.SetMyCommandsParams{
+		Commands: commands,
+	})
+	if err != nil {
+		bm.Errorf("Ошибка отправки сообщения: %v", err)
+		return
 	}
 }
