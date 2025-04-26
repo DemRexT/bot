@@ -2,9 +2,6 @@ package app
 
 import (
 	"context"
-	"crypto/hmac"
-	"crypto/sha256"
-	"encoding/base64"
 	"lotBot/pkg/invoicebox"
 	"time"
 
@@ -31,13 +28,6 @@ type Config struct {
 		AdminChatID int
 	}
 	InvoiceConfig invoicebox.Config
-}
-
-// generateSignature is a helper function that generates an HMAC SHA-256 signature.
-func generateSignature(secretKey string, body []byte) string {
-	mac := hmac.New(sha256.New, []byte(secretKey))
-	mac.Write(body)
-	return base64.StdEncoding.EncodeToString(mac.Sum(nil))
 }
 
 type App struct {

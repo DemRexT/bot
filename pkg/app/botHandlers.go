@@ -7,6 +7,7 @@ import (
 
 func (a *App) registerBotHandlers() {
 	a.b.RegisterHandler(botLib.HandlerTypeMessageText, "/start", botLib.MatchTypeExact, a.bm.StartHandler)
+	a.b.RegisterHandler(botLib.HandlerTypeMessageText, "/pay", botLib.MatchTypeExact, a.bm.PayHandler)
 	a.b.RegisterHandler(botLib.HandlerTypeCallbackQueryData, bot.PatternStart, botLib.MatchTypePrefix, a.bm.StartHandler)
 	a.b.RegisterHandler(botLib.HandlerTypeCallbackQueryData, bot.PatternRole, botLib.MatchTypePrefix, a.bm.CallbackHandler)
 	a.b.RegisterHandler(botLib.HandlerTypeCallbackQueryData, bot.PatternRegister, botLib.MatchTypePrefix, a.bm.Register)
