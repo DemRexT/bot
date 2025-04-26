@@ -16,13 +16,14 @@ import (
 type BotManager struct {
 	embedlog.Logger
 	adminChatID int
-	invoicebox.InvoiceClient
+	ic          *invoicebox.InvoiceClient
 }
 
-func NewBotManager(logger embedlog.Logger, adminChatID int) *BotManager {
+func NewBotManager(logger embedlog.Logger, adminChatID int, cfg invoicebox.Config) *BotManager {
 	return &BotManager{
 		Logger:      logger,
 		adminChatID: adminChatID,
+		ic:          invoicebox.NewInvoiceClient(logger, cfg),
 	}
 }
 
@@ -87,7 +88,7 @@ func (bm BotManager) StartHandler(ctx context.Context, b *bot.Bot, update *model
 func (bm BotManager) PayHandler(ctx context.Context, b *bot.Bot, update *models.Update) {
 	chatID := update.Message.Chat.ID
 
-	err := bm.InvoiceClient.AskApi()
+	err := bm.ic.AskApi()
 	if err != nil {
 		bm.Errorf("Ошибка при вызове InvoiceBox API: %v", err)
 		_, _ = b.SendMessage(ctx, &bot.SendMessageParams{
