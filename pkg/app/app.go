@@ -78,7 +78,7 @@ func (a *App) Run() error {
 	a.registerAPIHandlers()
 	go a.b.Start(context.Background())
 
-	err := a.ic.AskApi()
+	_, err := a.ic.AskApi()
 	if err != nil {
 		return err
 	}

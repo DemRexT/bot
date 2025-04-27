@@ -11,8 +11,8 @@ import (
 )
 
 type Config struct {
-	SecretKey  string
-	MerchantID string
+	SecretKey  string `toml:"SecretKey"`
+	MerchantID string `toml:"MerchantID"`
 }
 
 type InvoiceClient struct {
@@ -26,7 +26,7 @@ func NewInvoiceClient(logger embedlog.Logger, cfg Config) *InvoiceClient {
 
 const url = "https://api.invoicebox.ru/l3/billing/api/order/order"
 
-func (ic *InvoiceClient) AskApi() error {
+func (ic *InvoiceClient) AskApi() (string, error) {
 	type BasketItem struct {
 		SKU            string  `json:"sku"`
 		Name           string  `json:"name"`
@@ -49,27 +49,21 @@ func (ic *InvoiceClient) AskApi() error {
 		MerchantOrderID string       `json:"merchantOrderId"`
 		Amount          float64      `json:"amount"`
 		CurrencyID      string       `json:"currencyId"`
-		SuccessURL      string       `json:"successUrl"`
-		FailURL         string       `json:"failUrl"`
-		ReturnURL       string       `json:"returnUrl"`
 		VatAmount       float64      `json:"vatAmount"`
 		BasketItems     []BasketItem `json:"basketItems"`
 	}
 
 	order := CreateOrderRequest{
-		MerchantID:      "44844f1e-4228-4bd2-bd9c-73f90e3e06ed",
+		MerchantID:      ic.cfg.MerchantID,
 		MerchantOrderID: "test-order-123",
 		Amount:          100.00,
 		CurrencyID:      "RUB",
-		SuccessURL:      "https://merchant.ru/success",
-		FailURL:         "https://merchant.ru/fail",
-		ReturnURL:       "https://merchant.ru/return",
 		VatAmount:       16.67,
 		BasketItems: []BasketItem{
 			{
 				SKU:            "sku123",
-				Name:           "Test Product",
-				Measure:        "pcs",
+				Name:           "Тест услуга",
+				Measure:        "шт.",
 				MeasureCode:    "796",
 				GrossWeight:    0,
 				NetWeight:      0,
@@ -88,43 +82,53 @@ func (ic *InvoiceClient) AskApi() error {
 	jsonData, err := json.Marshal(order)
 	if err != nil {
 		fmt.Printf("JSON marshal error", err)
-		return err
+		return "", err
 	}
 
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonData))
 	if err != nil {
 		fmt.Printf("Request creation error", err)
-		return err
+		return "", err
 	}
-	fmt.Println("Authorization SecretKey:", ic.cfg.SecretKey)
 
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("User-Agent", "MyApp 1.0")
 	req.Header.Set("Accept", "application/json")
 	req.Header.Set("Authorization", ic.cfg.SecretKey)
 
-	fmt.Println("Request Headers:")
-	fmt.Printf("Content-Type: %s\n", req.Header.Get("Content-Type"))
-	fmt.Printf("User-Agent: %s\n", req.Header.Get("User-Agent"))
-	fmt.Printf("Accept: %s\n", req.Header.Get("Accept"))
-	fmt.Printf("Authorization: %s\n", req.Header.Get("Authorization"))
-
 	client := &http.Client{Timeout: 10 * time.Second}
 	resp, err := client.Do(req)
 	if err != nil {
 		fmt.Printf("Request error", err)
-		return err
+		return "", err
+
 	}
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		fmt.Printf("Read error", err)
-		return err
+		return "", err
 	}
 
 	fmt.Printf("Response Status:", resp.Status)
 	fmt.Printf("Response Body:", string(body))
-	fmt.Println(req.Header)
 
-	return nil
+	type CreateOrderResponse struct {
+		Data struct {
+			PaymentUrl string `json:"paymentUrl"`
+		} `json:"data"`
+	}
+
+	var orderResp CreateOrderResponse
+	if err := json.Unmarshal(body, &orderResp); err != nil {
+		return "", fmt.Errorf("unmarshal error: %w", err)
+	}
+
+	fmt.Println("paymentUrl from API:", orderResp.Data.PaymentUrl)
+
+	if orderResp.Data.PaymentUrl == "" {
+		return "", fmt.Errorf("paymentUrl not found in response")
+	}
+
+	return orderResp.Data.PaymentUrl, nil
 }

@@ -88,7 +88,7 @@ func (bm BotManager) StartHandler(ctx context.Context, b *bot.Bot, update *model
 func (bm BotManager) PayHandler(ctx context.Context, b *bot.Bot, update *models.Update) {
 	chatID := update.Message.Chat.ID
 
-	err := bm.ic.AskApi()
+	redirectURL, err := bm.ic.AskApi()
 	if err != nil {
 		bm.Errorf("Ошибка при вызове InvoiceBox API: %v", err)
 		_, _ = b.SendMessage(ctx, &bot.SendMessageParams{
@@ -100,10 +100,9 @@ func (bm BotManager) PayHandler(ctx context.Context, b *bot.Bot, update *models.
 
 	_, _ = b.SendMessage(ctx, &bot.SendMessageParams{
 		ChatID: chatID,
-		Text:   "Счёт успешно создан! Ожидайте перехода на оплату.",
+		Text:   fmt.Sprintf("Счёт успешно создан! Перейдите по ссылке для оплаты:\n%s", redirectURL),
 	})
 }
-
 func (bm BotManager) CallbackHandler(ctx context.Context, b *bot.Bot, update *models.Update) {
 
 	_, err := b.AnswerCallbackQuery(ctx, &bot.AnswerCallbackQueryParams{
