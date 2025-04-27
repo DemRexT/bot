@@ -2,6 +2,7 @@ package app
 
 import (
 	"context"
+	"lotBot/pkg/invoicebox"
 	"time"
 
 	"lotBot/pkg/db"
@@ -26,6 +27,7 @@ type Config struct {
 		Token       string
 		AdminChatID int
 	}
+	InvoiceConfig invoicebox.Config
 }
 
 type App struct {
@@ -38,6 +40,7 @@ type App struct {
 	b       *bot.Bot
 	bm      *botLogic.BotManager
 	bot     *bot.Bot
+	ic      *invoicebox.InvoiceClient
 }
 
 func New(appName string, verbose bool, cfg Config, db db.DB, dbc *pg.DB) *App {
@@ -53,13 +56,15 @@ func New(appName string, verbose bool, cfg Config, db db.DB, dbc *pg.DB) *App {
 	a.echo.HidePort = true
 	a.echo.IPExtractor = echo.ExtractIPFromRealIPHeader()
 
-	a.bm = botLogic.NewBotManager(a.Logger, a.cfg.Bot.AdminChatID)
+	a.bm = botLogic.NewBotManager(a.Logger, a.cfg.Bot.AdminChatID, a.cfg.InvoiceConfig)
 
 	b, err := bot.New(cfg.Bot.Token)
 	if err != nil {
 		panic(err)
 	}
 	a.b = b
+
+	a.ic = invoicebox.NewInvoiceClient(a.Logger, a.cfg.InvoiceConfig)
 
 	return a
 }
@@ -72,6 +77,12 @@ func (a *App) Run() error {
 	a.registerDebugHandlers()
 	a.registerAPIHandlers()
 	go a.b.Start(context.Background())
+
+	_, err := a.ic.AskApi()
+	if err != nil {
+		return err
+	}
+
 	return a.runHTTPServer(a.cfg.Server.Host, a.cfg.Server.Port)
 }
 

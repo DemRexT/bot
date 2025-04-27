@@ -8,6 +8,7 @@ import (
 	"github.com/go-telegram/bot/models"
 	"log"
 	"lotBot/pkg/embedlog"
+	"lotBot/pkg/invoicebox"
 	"strconv"
 	"strings"
 )
@@ -15,12 +16,14 @@ import (
 type BotManager struct {
 	embedlog.Logger
 	adminChatID int
+	ic          *invoicebox.InvoiceClient
 }
 
-func NewBotManager(logger embedlog.Logger, adminChatID int) *BotManager {
+func NewBotManager(logger embedlog.Logger, adminChatID int, cfg invoicebox.Config) *BotManager {
 	return &BotManager{
 		Logger:      logger,
 		adminChatID: adminChatID,
+		ic:          invoicebox.NewInvoiceClient(logger, cfg),
 	}
 }
 
@@ -84,6 +87,24 @@ func (bm BotManager) StartHandler(ctx context.Context, b *bot.Bot, update *model
 
 }
 
+func (bm BotManager) PayHandler(ctx context.Context, b *bot.Bot, update *models.Update) {
+	chatID := update.Message.Chat.ID
+
+	redirectURL, err := bm.ic.AskApi()
+	if err != nil {
+		bm.Errorf("Ошибка при вызове InvoiceBox API: %v", err)
+		_, _ = b.SendMessage(ctx, &bot.SendMessageParams{
+			ChatID: chatID,
+			Text:   "Произошла ошибка при создании счёта. Попробуйте позже.",
+		})
+		return
+	}
+
+	_, _ = b.SendMessage(ctx, &bot.SendMessageParams{
+		ChatID: chatID,
+		Text:   fmt.Sprintf("Счёт успешно создан! Перейдите по ссылке для оплаты:\n%s", redirectURL),
+	})
+}
 func (bm BotManager) CallbackHandler(ctx context.Context, b *bot.Bot, update *models.Update) {
 
 	_, err := b.AnswerCallbackQuery(ctx, &bot.AnswerCallbackQueryParams{

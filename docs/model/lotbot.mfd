@@ -1,11 +1,10 @@
 <Project xmlns:xsi="" xmlns:xsd="">
-    <Name>apisrv.mfd</Name>
+    <Name>lotbot.mfd</Name>
     <PackageNames>
-        <string>common</string>
-        <string>vfs</string>
+        <string>lotbot</string>
     </PackageNames>
     <Languages>
-        <string>ru</string>
+        <string>en</string>
     </Languages>
     <GoPGVer>10</GoPGVer>
     <CustomTypes></CustomTypes>
