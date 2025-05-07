@@ -32,7 +32,7 @@ func WebhookHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}(r.Body)
 
-	fmt.Println("📩 Получен вебхук от InvoiceBox:")
+	fmt.Println("Получен вебхук от InvoiceBox:")
 	fmt.Println(string(body))
 
 	var notification InvoiceNotification
