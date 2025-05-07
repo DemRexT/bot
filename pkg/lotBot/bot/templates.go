@@ -34,3 +34,12 @@ var ResponceTaskModeration = `
 		 Слот для созвона: %s
 		——————————————
     `
+
+var RequestTaskVerification = `
+		*Задание на проверку*:
+		——————————————
+		Название: %s
+		[Заказчик](tg://user?id=%d)
+		[Исполнитель](tg://user?id=%d)
+		——————————————
+		`
