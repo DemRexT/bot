@@ -28,22 +28,35 @@ func NewBotManager(logger embedlog.Logger, adminChatID int, cfg invoicebox.Confi
 }
 
 const (
-	PatternStart            = "start"
-	PatternRole             = "role_"
-	PatternRegister         = "register_"
-	PatternSubmitModeration = "submit_for_moderation_"
-	PatternAction           = "action_"
-	PatternViewTask         = "view_tasks"
-	PatternReady            = "ready_"
-	PatternCall             = "call"
-	PatternNot              = "not_"
-	PatternCreateTask       = "create_task"
-	PatternLater            = "later"
-	UrlRegisterStudent      = "https://docs.google.com/forms/d/e/1FAIpQLSemsbNWCx2ewY25WlvQP_baBef6RUs1jF0w1p4obb99ieXFAw/viewform?usp=pp_url&entry.1082496981="
-	UrlRegisterBusiness     = "https://docs.google.com/forms/d/e/1FAIpQLSdz5iYc9UB6M3wOOrGGl-4jTywltlkl7AZgqXrNKIBqrY87mA/viewform?usp=pp_url&entry.213949143="
-	UrlCreateTask           = "https://docs.google.com/forms/d/e/1FAIpQLScQgB6T74K87rZHi8a9qi-l565V3rrO5sKUlHe9LStZiRM3YA/viewform?usp=pp_url&entry.995903952="
-	UrlTelegrammChat        = "https://web.telegram.org/a/#"
+	PatternStart             = "start"
+	PatternRole              = "role_"
+	PatternRegister          = "register_"
+	PatternSubmitModeration  = "submit_for_moderation_"
+	PatternAction            = "action_"
+	PatternViewTask          = "view_tasks"
+	PatternReady             = "ready_"
+	PatternCall              = "call"
+	PatternNot               = "not_"
+	PatternCreateTask        = "create_task"
+	PatternLater             = "later"
+	PatternTaskCheckResponse = "check_response"
+	UrlRegisterStudent       = "https://docs.google.com/forms/d/e/1FAIpQLSemsbNWCx2ewY25WlvQP_baBef6RUs1jF0w1p4obb99ieXFAw/viewform?usp=pp_url&entry.1082496981="
+	UrlRegisterBusiness      = "https://docs.google.com/forms/d/e/1FAIpQLSdz5iYc9UB6M3wOOrGGl-4jTywltlkl7AZgqXrNKIBqrY87mA/viewform?usp=pp_url&entry.213949143="
+	UrlCreateTask            = "https://docs.google.com/forms/d/e/1FAIpQLScQgB6T74K87rZHi8a9qi-l565V3rrO5sKUlHe9LStZiRM3YA/viewform?usp=pp_url&entry.995903952="
+	UrlTelegrammChat         = "https://web.telegram.org/a/#"
 )
+
+func (bm BotManager) PrivateOnly(handler bot.HandlerFunc) bot.HandlerFunc {
+	return func(ctx context.Context, b *bot.Bot, update *models.Update) {
+		// Блокируем команды вне личных чатов
+		if update.Message != nil && update.Message.Chat.Type != "private" {
+			return
+		}
+
+		// CallbackQuery обрабатываем всегда
+		handler(ctx, b, update)
+	}
+}
 
 func (bm BotManager) StartHandler(ctx context.Context, b *bot.Bot, update *models.Update) {
 	kb := &models.InlineKeyboardMarkup{
@@ -271,6 +284,16 @@ func (bm BotManager) ModerationStudent(ctx context.Context, b *bot.Bot, update *
 		bm.Errorf("Ошибка отправки сообщения: %v", err)
 	}
 
+	_, err = b.SendMessage(ctx, &bot.SendMessageParams{
+		ChatID:      userID,
+		Text:        "Твоя заявка принята!\nПозвоним тебе для подтверждения и в течение часа подтвердим твою регистрацию в сервисе",
+		ParseMode:   "Markdown",
+		ReplyMarkup: kb,
+	})
+	if err != nil {
+		bm.Errorf("Ошибка отправки сообщения: %v", err)
+	}
+
 }
 
 func (bm BotManager) ModerationBusines(ctx context.Context, b *bot.Bot, update *models.Update) {
@@ -324,6 +347,15 @@ func (bm BotManager) ModerationBusines(ctx context.Context, b *bot.Bot, update *
 		ChatID:      bm.adminChatID,
 		Text:        response,
 		ParseMode:   "Markdown",
+		ReplyMarkup: kb,
+	})
+	if err != nil {
+		bm.Errorf("Ошибка отправки сообщения: %v", err)
+	}
+
+	_, err = b.SendMessage(ctx, &bot.SendMessageParams{
+		ChatID:      userID,
+		Text:        "Ваша заявка отправлена на модерацию\nВ течение часа вернемся с результатом",
 		ReplyMarkup: kb,
 	})
 	if err != nil {
@@ -396,7 +428,7 @@ func (bm BotManager) ModerationResponse(ctx context.Context, b *bot.Bot, update 
 				},
 			}
 		case "Teen":
-			response = "Твои данные подтверждены!\n\nПосмотрим, есть ли у нас для тебя первое задание?"
+			response = "Твои данные подтверждены!\nГотовимся отправить тебе первое задание!"
 			kb = &models.InlineKeyboardMarkup{
 				InlineKeyboard: [][]models.InlineKeyboardButton{
 					{
@@ -538,7 +570,7 @@ func (bm BotManager) Call(ctx context.Context, b *bot.Bot, update *models.Update
 	_, err = b.EditMessageText(ctx, &bot.EditMessageTextParams{
 		ChatID:      update.CallbackQuery.Message.Message.Chat.ID,
 		MessageID:   update.CallbackQuery.Message.Message.ID,
-		Text:        "Отлично! Давай назначим созвон",
+		Text:        "Отлично!\nДавай назначим созвон для выяснения деталей, затем ты сможешь приступить",
 		ReplyMarkup: kb,
 	})
 	if err != nil {
@@ -758,4 +790,143 @@ func (bm BotManager) Later(ctx context.Context, b *bot.Bot, update *models.Updat
 		bm.Errorf("Ошибка отправки сообщения: %v", err)
 		return
 	}
+}
+func (bm BotManager) VerificationTask(ctx context.Context, b *bot.Bot, update *models.Update) {
+	_, err := b.AnswerCallbackQuery(ctx, &bot.AnswerCallbackQueryParams{
+		CallbackQueryID: update.CallbackQuery.ID,
+		ShowAlert:       false,
+	})
+	if err != nil {
+		bm.Errorf("%v", err)
+	}
+
+	bm.Errorf("%v", update.CallbackQuery.Message.Message.Chat.ID)
+
+	_, err = b.EditMessageText(ctx, &bot.EditMessageTextParams{
+		ChatID:    update.CallbackQuery.Message.Message.Chat.ID,
+		MessageID: update.CallbackQuery.Message.Message.ID,
+		Text:      "Ок!\nКак будет готово, выберите в меню пункт \"Готово для проверки\"",
+	})
+
+	newCmd := models.BotCommand{
+		Command:     "ready_verification",
+		Description: "Готово для проверки",
+	}
+
+	_, err = b.SetChatMenuButton(ctx, &bot.SetChatMenuButtonParams{
+		ChatID:     update.CallbackQuery.Message.Message.Chat.ID,
+		MenuButton: models.MenuButtonCommands{Type: "commands"},
+	})
+	if err != nil {
+		bm.Errorf("Ошибка отправки сообщения: %v", err)
+		return
+	}
+
+	commands, err := b.GetMyCommands(ctx, &bot.GetMyCommandsParams{})
+	if err != nil {
+		bm.Errorf("Ошибка отправки сообщения: %v", err)
+		return
+	}
+
+	commands = append(commands, newCmd)
+
+	_, err = b.SetMyCommands(ctx, &bot.SetMyCommandsParams{
+		Commands: commands,
+	})
+	if err != nil {
+		bm.Errorf("Ошибка отправки сообщения: %v", err)
+		return
+	}
+}
+
+func (bm BotManager) VerificationRequest(ctx context.Context, b *bot.Bot, update *models.Update) {
+
+	kbAdmin := &models.InlineKeyboardMarkup{
+		InlineKeyboard: [][]models.InlineKeyboardButton{
+			{
+				{
+					Text:         "Готово",
+					CallbackData: PatternTaskCheckResponse + "_completed_" + strconv.FormatInt(update.Message.From.ID, 10),
+				},
+				{
+					Text:         "Отправить на доработку",
+					CallbackData: PatternTaskCheckResponse + "_revision_" + strconv.FormatInt(update.Message.From.ID, 10),
+				},
+			},
+		},
+	}
+
+	kbBusiness := &models.InlineKeyboardMarkup{
+		InlineKeyboard: [][]models.InlineKeyboardButton{
+			{
+				{
+					Text:         "Назначить созвон для проверки",
+					CallbackData: PatternCall,
+				},
+			},
+		},
+	}
+	nameTask := "Название задания"
+	businessID := int64(1098511932)
+
+	response := fmt.Sprintf(RequestTaskVerification,
+		nameTask, businessID, update.Message.From.ID)
+
+	_, err := b.SendMessage(ctx, &bot.SendMessageParams{
+		ChatID:      bm.adminChatID,
+		Text:        response,
+		ParseMode:   "Markdown",
+		ReplyMarkup: kbAdmin,
+	})
+
+	if err != nil {
+		bm.Errorf("Ошибка отправки сообщения: %v", err)
+		return
+	}
+
+	_, err = b.SendMessage(ctx, &bot.SendMessageParams{
+		ChatID:      businessID,
+		Text:        response,
+		ParseMode:   "Markdown",
+		ReplyMarkup: kbBusiness,
+	})
+
+	if err != nil {
+		bm.Errorf("Ошибка отправки сообщения: %v", err)
+		return
+	}
+}
+
+func (bm BotManager) ResponseVerificationTask(ctx context.Context, b *bot.Bot, update *models.Update) {
+	_, err := b.AnswerCallbackQuery(ctx, &bot.AnswerCallbackQueryParams{
+		CallbackQueryID: update.CallbackQuery.ID,
+		ShowAlert:       false,
+	})
+	if err != nil {
+		bm.Errorf("%v", err)
+	}
+
+	parts := strings.Split(update.CallbackQuery.Data, "_")
+
+	if len(parts) < 4 {
+		bm.Errorf("не удалось отобразить карточку пользователя, len(parts) < 4\n")
+		return
+	}
+	var response string
+	switch parts[2] {
+	case "completed":
+		response = "Задание проверено - все ок, но нужно кое-что доработать!"
+	case "revision":
+		response = "Принято!\nЗаказчик принял твою работу! Ожидай оплаты)"
+	}
+
+	_, err = b.SendMessage(ctx, &bot.SendMessageParams{
+		ChatID: parts[3],
+		Text:   response,
+	})
+
+	if err != nil {
+		bm.Errorf("%v", err)
+	}
+
 }
