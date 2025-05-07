@@ -48,12 +48,11 @@ const (
 
 func (bm BotManager) PrivateOnly(handler bot.HandlerFunc) bot.HandlerFunc {
 	return func(ctx context.Context, b *bot.Bot, update *models.Update) {
-		// Блокируем команды вне личных чатов
+
 		if update.Message != nil && update.Message.Chat.Type != "private" {
 			return
 		}
 
-		// CallbackQuery обрабатываем всегда
 		handler(ctx, b, update)
 	}
 }
