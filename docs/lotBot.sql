@@ -1,6 +1,6 @@
 ﻿-- =============================================================================
 -- Diagram Name: apisrv
--- Created on: 4/21/2025 10:58:27 PM
+-- Created on: 08.05.2025 15:20:35
 -- Diagram Version: 
 -- =============================================================================
 
@@ -20,12 +20,12 @@ CREATE TABLE "tasks" (
 	"companyId" int4 NOT NULL,
 	"scope" text NOT NULL,
 	"description" text NOT NULL,
-	"images" varchar(128)[] NOT NULL,
 	"link" text NOT NULL,
 	"deadline" date NOT NULL,
 	"contactSlot" text NOT NULL,
 	"statusId" int4 NOT NULL,
 	"studentId" int4,
+	"budget" text NOT NULL,
 	PRIMARY KEY("taskId")
 );
 
