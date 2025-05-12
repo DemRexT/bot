@@ -16,7 +16,7 @@ var Columns = struct {
 		ID, TgID, Name, Birthday, City, Scope, Email, StatusID string
 	}
 	Task struct {
-		ID, CompanyID, Scope, Description, Images, Link, Deadline, ContactSlottext, StatusID, StudentID, ContactSlot string
+		ID, CompanyID, Scope, Description, Link, Deadline, ContactSlot, StatusID, StudentID, Budget string
 
 		Company, Student string
 	}
@@ -46,21 +46,20 @@ var Columns = struct {
 		StatusID: "statusId",
 	},
 	Task: struct {
-		ID, CompanyID, Scope, Description, Images, Link, Deadline, ContactSlottext, StatusID, StudentID, ContactSlot string
+		ID, CompanyID, Scope, Description, Link, Deadline, ContactSlot, StatusID, StudentID, Budget string
 
 		Company, Student string
 	}{
-		ID:              "taskId",
-		CompanyID:       "companyId",
-		Scope:           "scope",
-		Description:     "description",
-		Images:          "images",
-		Link:            "link",
-		Deadline:        "deadline",
-		ContactSlottext: "contactSlot text",
-		StatusID:        "statusId",
-		StudentID:       "studentId",
-		ContactSlot:     "contactSlot",
+		ID:          "taskId",
+		CompanyID:   "companyId",
+		Scope:       "scope",
+		Description: "description",
+		Link:        "link",
+		Deadline:    "deadline",
+		ContactSlot: "contactSlot",
+		StatusID:    "statusId",
+		StudentID:   "studentId",
+		Budget:      "budget",
 
 		Company: "Company",
 		Student: "Student",
@@ -127,17 +126,16 @@ type Student struct {
 type Task struct {
 	tableName struct{} `pg:"tasks,alias:t,discard_unknown_columns"`
 
-	ID              int       `pg:"taskId,pk"`
-	CompanyID       int       `pg:"companyId,use_zero"`
-	Scope           string    `pg:"scope,use_zero"`
-	Description     string    `pg:"description,use_zero"`
-	Images          []string  `pg:"images,array,use_zero"`
-	Link            string    `pg:"link,use_zero"`
-	Deadline        time.Time `pg:"deadline,use_zero"`
-	ContactSlottext string    `pg:"contactSlot text,use_zero"`
-	StatusID        int       `pg:"statusId,use_zero"`
-	StudentID       *int      `pg:"studentId"`
-	ContactSlot     string    `pg:"contactSlot,use_zero"`
+	ID          int       `pg:"taskId,pk"`
+	CompanyID   int       `pg:"companyId,use_zero"`
+	Scope       string    `pg:"scope,use_zero"`
+	Description string    `pg:"description,use_zero"`
+	Link        string    `pg:"link,use_zero"`
+	Deadline    time.Time `pg:"deadline,use_zero"`
+	ContactSlot string    `pg:"contactSlot,use_zero"`
+	StatusID    int       `pg:"statusId,use_zero"`
+	StudentID   *int      `pg:"studentId"`
+	Budget      string    `pg:"budget,use_zero"`
 
 	Company *Company `pg:"fk:companyId,rel:has-one"`
 	Student *Student `pg:"fk:studentId,rel:has-one"`

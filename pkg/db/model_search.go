@@ -207,22 +207,22 @@ func (ss *StudentSearch) Q() applier {
 type TaskSearch struct {
 	search
 
-	ID                   *int
-	CompanyID            *int
-	Scope                *string
-	Description          *string
-	Link                 *string
-	Deadline             *time.Time
-	ContactSlottext      *string
-	StatusID             *int
-	StudentID            *int
-	ContactSlot          *string
-	IDs                  []int
-	ScopeILike           *string
-	DescriptionILike     *string
-	LinkILike            *string
-	ContactSlottextILike *string
-	ContactSlotILike     *string
+	ID               *int
+	CompanyID        *int
+	Scope            *string
+	Description      *string
+	Link             *string
+	Deadline         *time.Time
+	ContactSlot      *string
+	StatusID         *int
+	StudentID        *int
+	Budget           *string
+	IDs              []int
+	ScopeILike       *string
+	DescriptionILike *string
+	LinkILike        *string
+	ContactSlotILike *string
+	BudgetILike      *string
 }
 
 func (ts *TaskSearch) Apply(query *orm.Query) *orm.Query {
@@ -247,8 +247,8 @@ func (ts *TaskSearch) Apply(query *orm.Query) *orm.Query {
 	if ts.Deadline != nil {
 		ts.where(query, Tables.Task.Alias, Columns.Task.Deadline, ts.Deadline)
 	}
-	if ts.ContactSlottext != nil {
-		ts.where(query, Tables.Task.Alias, Columns.Task.ContactSlottext, ts.ContactSlottext)
+	if ts.ContactSlot != nil {
+		ts.where(query, Tables.Task.Alias, Columns.Task.ContactSlot, ts.ContactSlot)
 	}
 	if ts.StatusID != nil {
 		ts.where(query, Tables.Task.Alias, Columns.Task.StatusID, ts.StatusID)
@@ -256,8 +256,8 @@ func (ts *TaskSearch) Apply(query *orm.Query) *orm.Query {
 	if ts.StudentID != nil {
 		ts.where(query, Tables.Task.Alias, Columns.Task.StudentID, ts.StudentID)
 	}
-	if ts.ContactSlot != nil {
-		ts.where(query, Tables.Task.Alias, Columns.Task.ContactSlot, ts.ContactSlot)
+	if ts.Budget != nil {
+		ts.where(query, Tables.Task.Alias, Columns.Task.Budget, ts.Budget)
 	}
 	if len(ts.IDs) > 0 {
 		Filter{Columns.Task.ID, ts.IDs, SearchTypeArray, false}.Apply(query)
@@ -271,11 +271,11 @@ func (ts *TaskSearch) Apply(query *orm.Query) *orm.Query {
 	if ts.LinkILike != nil {
 		Filter{Columns.Task.Link, *ts.LinkILike, SearchTypeILike, false}.Apply(query)
 	}
-	if ts.ContactSlottextILike != nil {
-		Filter{Columns.Task.ContactSlottext, *ts.ContactSlottextILike, SearchTypeILike, false}.Apply(query)
-	}
 	if ts.ContactSlotILike != nil {
 		Filter{Columns.Task.ContactSlot, *ts.ContactSlotILike, SearchTypeILike, false}.Apply(query)
+	}
+	if ts.BudgetILike != nil {
+		Filter{Columns.Task.Budget, *ts.BudgetILike, SearchTypeILike, false}.Apply(query)
 	}
 
 	ts.apply(query)
