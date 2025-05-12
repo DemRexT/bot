@@ -8,14 +8,14 @@ import (
 )
 
 type InvoiceNotification struct {
-	Type            string `json:"type"`
-	Status          string `json:"status"`
-	InvoiceId       string `json:"invoiceId"`
-	MerchantOrderId string `json:"merchantOrderId"`
-	Amount          string `json:"amount"`
-	Currency        string `json:"currencyId"`
-	Signature       string `json:"signature"`
-	PaymentUrl      string `json:"paymentUrl"`
+	Type            string  `json:"type"`
+	Status          string  `json:"status"`
+	InvoiceId       string  `json:"invoiceId"`
+	MerchantOrderId string  `json:"merchantOrderId"`
+	Amount          float64 `json:"amount"`
+	Currency        string  `json:"currencyId"`
+	Signature       string  `json:"signature"`
+	PaymentUrl      string  `json:"paymentUrl"`
 }
 
 func WebhookHandler(w http.ResponseWriter, r *http.Request) {
