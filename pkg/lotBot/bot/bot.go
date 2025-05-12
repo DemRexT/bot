@@ -7,23 +7,27 @@ import (
 	"github.com/go-telegram/bot"
 	"github.com/go-telegram/bot/models"
 	"log"
+	"lotBot/pkg/db"
 	"lotBot/pkg/embedlog"
 	"lotBot/pkg/invoicebox"
 	"strconv"
 	"strings"
+	"time"
 )
 
 type BotManager struct {
 	embedlog.Logger
 	adminChatID int
 	ic          *invoicebox.InvoiceClient
+	repo        db.LotbotRepo
 }
 
-func NewBotManager(logger embedlog.Logger, adminChatID int, cfg invoicebox.Config) *BotManager {
+func NewBotManager(logger embedlog.Logger, dbo db.DB, adminChatID int, cfg invoicebox.Config) *BotManager {
 	return &BotManager{
 		Logger:      logger,
 		adminChatID: adminChatID,
 		ic:          invoicebox.NewInvoiceClient(logger, cfg),
+		repo:        db.NewLotbotRepo(dbo),
 	}
 }
 
@@ -198,7 +202,6 @@ func (bm BotManager) Register(ctx context.Context, b *bot.Bot, update *models.Up
 		}
 
 	case PatternRegister + "Business":
-
 		kb = &models.InlineKeyboardMarkup{
 			InlineKeyboard: [][]models.InlineKeyboardButton{
 				{
@@ -229,12 +232,12 @@ func (bm BotManager) Register(ctx context.Context, b *bot.Bot, update *models.Up
 func (bm BotManager) ModerationStudent(ctx context.Context, b *bot.Bot, update *models.Update) {
 
 	if b == nil {
-		log.Println("Ошибка: бот не инициализирован (nil)")
+		bm.Printf("Ошибка: бот не инициализирован (nil)")
 		return
 	}
 
 	if update == nil || update.CallbackQuery == nil {
-		log.Println("Ошибка: некорректный update объект")
+		bm.Printf("Ошибка: некорректный update объект")
 		return
 	}
 
@@ -253,6 +256,35 @@ func (bm BotManager) ModerationStudent(ctx context.Context, b *bot.Bot, update *
 	}
 
 	userID := data.Tgid
+
+	parsedBirthday, err := time.Parse("02.01.2006", data.Birthday) // формат должен соответствовать строке
+	if err != nil {
+		bm.Errorf("Ошибка парсинга даты: %v", err)
+		return
+	}
+
+	tgid, err := strconv.ParseInt(data.Tgid, 10, 64)
+	if err != nil {
+		bm.Errorf("Ошибка парсинга TgID: %v", err)
+		return
+	}
+
+	joinedSkill := strings.Join(data.Skill, ", ")
+
+	student := &db.Student{
+		TgID:     tgid,
+		Name:     data.Name,
+		Birthday: parsedBirthday,
+		City:     data.City,
+		Scope:    joinedSkill,
+		Email:    data.Email,
+		StatusID: 2,
+	}
+
+	_, err = bm.repo.AddStudent(ctx, student)
+	if err != nil {
+		bm.Errorf("Не удалось записать в бд: %v", err)
+	}
 
 	kb := &models.InlineKeyboardMarkup{
 		InlineKeyboard: [][]models.InlineKeyboardButton{
@@ -273,7 +305,7 @@ func (bm BotManager) ModerationStudent(ctx context.Context, b *bot.Bot, update *
 	response := fmt.Sprintf(ResponseStudentModeration,
 		data.Name, data.Birthday, data.City, data.Skill, data.Email)
 
-	_, err := b.SendMessage(ctx, &bot.SendMessageParams{
+	_, err = b.SendMessage(ctx, &bot.SendMessageParams{
 		ChatID:      bm.adminChatID,
 		Text:        response,
 		ParseMode:   "Markdown",
@@ -284,10 +316,9 @@ func (bm BotManager) ModerationStudent(ctx context.Context, b *bot.Bot, update *
 	}
 
 	_, err = b.SendMessage(ctx, &bot.SendMessageParams{
-		ChatID:      userID,
-		Text:        "Твоя заявка принята!\nПозвоним тебе для подтверждения и в течение часа подтвердим твою регистрацию в сервисе",
-		ParseMode:   "Markdown",
-		ReplyMarkup: kb,
+		ChatID:    userID,
+		Text:      "Твоя заявка принята!\nПозвоним тебе для подтверждения и в течение часа подтвердим твою регистрацию в сервисе",
+		ParseMode: "Markdown",
 	})
 	if err != nil {
 		bm.Errorf("Ошибка отправки сообщения: %v", err)
@@ -297,12 +328,12 @@ func (bm BotManager) ModerationStudent(ctx context.Context, b *bot.Bot, update *
 
 func (bm BotManager) ModerationBusines(ctx context.Context, b *bot.Bot, update *models.Update) {
 	if b == nil {
-		log.Println("Ошибка: бот не инициализирован (nil)")
+		bm.Printf("Ошибка: бот не инициализирован (nil)")
 		return
 	}
 
 	if update == nil || update.CallbackQuery == nil {
-		log.Println("Ошибка: некорректный update объект")
+		bm.Printf("Ошибка: некорректный update объект")
 		return
 	}
 
@@ -384,33 +415,38 @@ func (bm BotManager) ModerationResponse(ctx context.Context, b *bot.Bot, update 
 		return
 	}
 
+	tgID, err := strconv.ParseInt(parts[2], 10, 64)
+	if err != nil {
+		log.Printf("ошибка парсинга TgID: %v", err)
+		return
+	}
+
 	var kb *models.InlineKeyboardMarkup
 	var response string
 	var responceAdmin string
-	switch parts[1] {
-	case "reject":
+	switch parts[3] {
+	case "Business":
+		switch parts[1] {
+		case "reject":
+			responceAdmin = "Пользователь отклонен"
 
-		response = "Заявка не прошла модерацию(\n\n" +
-			"Были введены некорректные или недостоверные данные.\n" +
-			"Пожалуйста, вернись к первому шагу и проверь, не допущена ли ошибка"
+			response = "Заявка не прошла модерацию(\n\n" +
+				"Были введены некорректные или недостоверные данные.\n" +
+				"Пожалуйста, вернись к первому шагу и проверь, не допущена ли ошибка"
 
-		responceAdmin = "Пользователь отклонен"
-
-		kb = &models.InlineKeyboardMarkup{
-			InlineKeyboard: [][]models.InlineKeyboardButton{
-				{
+			kb = &models.InlineKeyboardMarkup{
+				InlineKeyboard: [][]models.InlineKeyboardButton{
 					{
-						Text:         "Вернутся назад",
-						CallbackData: PatternStart,
+						{
+							Text:         "Вернутся назад",
+							CallbackData: PatternStart,
+						},
 					},
 				},
-			},
-		}
-	case "accept":
+			}
+		case "accept":
+			responceAdmin = "Пользователь подтвержден"
 
-		responceAdmin = "Пользователь подтвержден"
-		switch parts[3] {
-		case "Business":
 			response = "Модерация пройдена!\n\nХотите разместить первое задание?"
 			kb = &models.InlineKeyboardMarkup{
 				InlineKeyboard: [][]models.InlineKeyboardButton{
@@ -426,7 +462,71 @@ func (bm BotManager) ModerationResponse(ctx context.Context, b *bot.Bot, update 
 					},
 				},
 			}
-		case "Teen":
+		}
+	case "Teen":
+		responceAdmin = "Пользователь подтвержден"
+
+		search := &db.StudentSearch{
+			TgID: &tgID,
+		}
+		pager := db.Pager{Page: 1, PageSize: 1}
+
+		students, err := bm.repo.StudentsByFilters(ctx, search, pager)
+		if err != nil {
+			bm.Printf("ошибка поиска студента: %v", err)
+			return
+		}
+		if len(students) == 0 {
+			bm.Printf("Студент не найден")
+			return
+		}
+
+		student := students[0]
+		switch parts[1] {
+		case "reject":
+			responceAdmin = "Пользователь отклонен"
+
+			student.StatusID = 3
+
+			ok, err := bm.repo.UpdateStudent(ctx, &student, db.WithColumns("statusId"))
+			if err != nil {
+				bm.Printf("ошибка обновления: %v", err)
+				return
+			}
+			if ok {
+				bm.Printf("Статус студента успешно обновлён")
+			} else {
+				bm.Printf("Обновление не затронуло ни одной строки")
+			}
+			response = "Заявка не прошла модерацию(\n\n" +
+				"Были введены некорректные или недостоверные данные.\n" +
+				"Пожалуйста, вернись к первому шагу и проверь, не допущена ли ошибка"
+
+			responceAdmin = "Пользователь отклонен"
+
+			kb = &models.InlineKeyboardMarkup{
+				InlineKeyboard: [][]models.InlineKeyboardButton{
+					{
+						{
+							Text:         "Вернутся назад",
+							CallbackData: PatternStart,
+						},
+					},
+				},
+			}
+		case "accept":
+			student.StatusID = 1
+
+			ok, err := bm.repo.UpdateStudent(ctx, &student, db.WithColumns("statusId"))
+			if err != nil {
+				bm.Printf("ошибка обновления: %v", err)
+				return
+			}
+			if ok {
+				bm.Printf("Статус студента успешно обновлён")
+			} else {
+				bm.Printf("Обновление не затронуло ни одной строки")
+			}
 			response = "Твои данные подтверждены!\nГотовимся отправить тебе первое задание!"
 			kb = &models.InlineKeyboardMarkup{
 				InlineKeyboard: [][]models.InlineKeyboardButton{
@@ -439,7 +539,6 @@ func (bm BotManager) ModerationResponse(ctx context.Context, b *bot.Bot, update 
 				},
 			}
 		}
-
 	default:
 		response = "Неизвестная команда: " + update.CallbackQuery.Data
 	}
@@ -654,41 +753,56 @@ func (bm BotManager) NotReady(ctx context.Context, b *bot.Bot, update *models.Up
 }
 
 func (bm BotManager) CreateTask(ctx context.Context, b *bot.Bot, update *models.Update) {
-	_, err := b.AnswerCallbackQuery(ctx, &bot.AnswerCallbackQueryParams{
-		CallbackQueryID: update.CallbackQuery.ID,
-		ShowAlert:       false,
-	})
-	if err != nil {
-		bm.Errorf("%v", err)
+	var userID int64
+	var chatID int64
+
+	// определяем пользователя и чат — поддержка Message и CallbackQuery
+	if update.Message != nil {
+		userID = update.Message.From.ID
+		chatID = update.Message.Chat.ID
+	} else if update.CallbackQuery != nil {
+		userID = update.CallbackQuery.From.ID
+		chatID = update.CallbackQuery.Message.Message.Chat.ID
+
+		// ответим на callback, чтобы убрать "часики"
+		_, _ = b.AnswerCallbackQuery(ctx, &bot.AnswerCallbackQueryParams{
+			CallbackQueryID: update.CallbackQuery.ID,
+			ShowAlert:       false,
+		})
+	} else {
+		bm.Errorf("CreateTask: ни Message, ни CallbackQuery не найдены")
+		return
 	}
+
 	kb := &models.InlineKeyboardMarkup{
 		InlineKeyboard: [][]models.InlineKeyboardButton{
 			{
 				{
 					Text: "Создать лот",
-					URL:  UrlCreateTask + strconv.FormatInt(update.CallbackQuery.From.ID, 10),
+					URL:  UrlCreateTask + strconv.FormatInt(userID, 10),
 				},
 			},
 		},
 	}
 
-	_, err = b.EditMessageText(ctx, &bot.EditMessageTextParams{
-		ChatID:      update.CallbackQuery.Message.Message.Chat.ID,
-		MessageID:   update.CallbackQuery.Message.Message.ID,
-		Text:        "Данные о лоте отправлены модераторам",
+	_, err := b.SendMessage(ctx, &bot.SendMessageParams{
+		ChatID:      chatID,
+		Text:        "Пожалуйста, заполните форму по ссылке",
 		ReplyMarkup: kb,
 	})
-
+	if err != nil {
+		bm.Errorf("Ошибка отправки сообщения: %v", err)
+	}
 }
 
 func (bm BotManager) ModerationTask(ctx context.Context, b *bot.Bot, update *models.Update) {
 	if b == nil {
-		log.Println("Ошибка: бот не инициализирован (nil)")
+		bm.Printf("Ошибка: бот не инициализирован (nil)")
 		return
 	}
 
 	if update == nil || update.CallbackQuery == nil {
-		log.Println("Ошибка: некорректный update объект")
+		bm.Printf("Ошибка: некорректный update объект")
 		return
 	}
 
@@ -914,9 +1028,9 @@ func (bm BotManager) ResponseVerificationTask(ctx context.Context, b *bot.Bot, u
 	var response string
 	switch parts[2] {
 	case "completed":
-		response = "Задание проверено - все ок, но нужно кое-что доработать!"
-	case "revision":
 		response = "Принято!\nЗаказчик принял твою работу! Ожидай оплаты)"
+	case "revision":
+		response = "Задание проверено - все ок, но нужно кое-что доработать!"
 	}
 
 	_, err = b.SendMessage(ctx, &bot.SendMessageParams{

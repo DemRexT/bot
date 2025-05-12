@@ -3,12 +3,15 @@ POST localhost:8075/formstudent
 Content-Type: application/json
 
 {
-  "tgId": "1098511932",
-  "Name": "Данила",
-  "birthday": "22.34.43",
-  "city": "234234",
-  "skill": "Вариант 11",
-  "email": "23141234"
+  "tgId": "320238701",
+  "Name": "1",
+  "birthday": "30.05.2004",
+  "city": "1",
+  "skill": [
+    "Написание текстов",
+    "Написание текстов"
+  ],
+  "email": "1"
 }
 
 ### Отправка данных компании
