@@ -55,18 +55,20 @@ type Searcher interface {
 type CompanySearch struct {
 	search
 
-	ID         *int
-	Name       *string
-	TgID       *int64
-	Inn        *int
-	Scope      *string
-	UserName   *interface{}
-	Phone      *int
-	StatusID   *int
-	IDs        []int
-	NameILike  *string
-	TgIDILike  *int64
-	ScopeILike *string
+	ID            *int
+	Name          *string
+	TgID          *int64
+	Inn           *int
+	Scope         *string
+	UserName      *interface{}
+	Phone         *int
+	StatusID      *int
+	UserName      *string
+	IDs           []int
+	NameILike     *string
+	TgIDILike     *int64
+	ScopeILike    *string
+	UserNameILike *interface{}
 }
 
 func (cs *CompanySearch) Apply(query *orm.Query) *orm.Query {
@@ -97,6 +99,9 @@ func (cs *CompanySearch) Apply(query *orm.Query) *orm.Query {
 	if cs.StatusID != nil {
 		cs.where(query, Tables.Company.Alias, Columns.Company.StatusID, cs.StatusID)
 	}
+	if cs.UserName != nil {
+		cs.where(query, Tables.Company.Alias, Columns.Company.UserName, cs.UserName)
+	}
 	if len(cs.IDs) > 0 {
 		Filter{Columns.Company.ID, cs.IDs, SearchTypeArray, false}.Apply(query)
 	}
@@ -108,6 +113,9 @@ func (cs *CompanySearch) Apply(query *orm.Query) *orm.Query {
 	}
 	if cs.ScopeILike != nil {
 		Filter{Columns.Company.Scope, *cs.ScopeILike, SearchTypeILike, false}.Apply(query)
+	}
+	if cs.UserNameILike != nil {
+		Filter{Columns.Company.UserName, *cs.UserNameILike, SearchTypeILike, false}.Apply(query)
 	}
 
 	cs.apply(query)

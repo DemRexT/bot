@@ -1,6 +1,6 @@
 ﻿-- =============================================================================
 -- Diagram Name: apisrv
--- Created on: 5/13/2025 12:24:03 AM
+-- Created on: 5/13/2025 1:59:48 AM
 -- Diagram Version: 
 -- =============================================================================
 
@@ -10,7 +10,7 @@ CREATE TABLE "companies" (
 	"tgId" int8 NOT NULL,
 	"inn" int4 NOT NULL,
 	"scope" text NOT NULL,
-	"userName" text NOT NULL,
+	"userName" varchar(128) NOT NULL,
 	"phone" int4 NOT NULL,
 	"statusId" int4 NOT NULL,
 	PRIMARY KEY("companyId")
