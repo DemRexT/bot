@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"lotBot/pkg/invoicebox"
 	"math/rand"
 	"net/http"
 	"os"
@@ -11,13 +12,11 @@ import (
 	"syscall"
 	"time"
 
-	"lotBot/pkg/app"
-	"lotBot/pkg/db"
-	"lotBot/pkg/invoicebox"
-
 	"github.com/BurntSushi/toml"
 	"github.com/go-pg/pg/v10"
 	"github.com/namsral/flag"
+	"lotBot/pkg/app"
+	"lotBot/pkg/db"
 )
 
 const appName = "lotBot"
@@ -58,14 +57,18 @@ func main() {
 	// create & run app
 	application := app.New(appName, *flVerbose, cfg, dbc, dbconn)
 
-	quit := make(chan os.Signal, 1)
-	signal.Notify(quit, os.Interrupt, syscall.SIGTERM)
-
 	go func() {
-		http.HandleFunc("/invoicebox-webhook", invoicebox.WebhookHandler)
+		invoiceboxHandler := &invoicebox.WebhookHandlerDependencies{
+			DB: dbconn,
+		}
+		http.HandleFunc("/invoicebox-webhook", invoiceboxHandler.InvoiceboxWebhook)
 		fmt.Println("Webhook port 8080")
 		log.Fatal(http.ListenAndServe(":8080", nil))
 	}()
+
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, os.Interrupt, syscall.SIGTERM)
+
 	// Run
 	go func() {
 		if err := application.Run(); err != nil {

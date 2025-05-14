@@ -7,6 +7,7 @@ import (
 	"github.com/go-telegram/bot"
 	"github.com/go-telegram/bot/models"
 	"log"
+	"lotBot/pkg/db"
 	"lotBot/pkg/embedlog"
 	"lotBot/pkg/invoicebox"
 	"strconv"
@@ -17,6 +18,7 @@ type BotManager struct {
 	embedlog.Logger
 	adminChatID int
 	ic          *invoicebox.InvoiceClient
+	repo        db.LotbotRepo
 }
 
 func NewBotManager(logger embedlog.Logger, adminChatID int, cfg invoicebox.Config) *BotManager {
