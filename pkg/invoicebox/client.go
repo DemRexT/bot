@@ -28,20 +28,14 @@ const url = "https://api.invoicebox.ru/l3/billing/api/order/order"
 
 func (ic *InvoiceClient) AskApi() (string, error) {
 	type BasketItem struct {
-		SKU            string  `json:"sku"`
-		Name           string  `json:"name"`
-		Measure        string  `json:"measure"`
-		MeasureCode    string  `json:"measureCode"`
-		GrossWeight    float64 `json:"grossWeight"`
-		NetWeight      float64 `json:"netWeight"`
-		Quantity       float64 `json:"quantity"`
-		Amount         float64 `json:"amount"`
-		AmountWoVat    float64 `json:"amountWoVat"`
-		TotalAmount    float64 `json:"totalAmount"`
-		TotalVatAmount float64 `json:"totalVatAmount"`
-		VatCode        string  `json:"vatCode"`
-		Type           string  `json:"type"`
-		PaymentType    string  `json:"paymentType"`
+		SKU         string  `json:"sku"`
+		Name        string  `json:"name"`
+		Measure     string  `json:"measure"`
+		Quantity    float64 `json:"quantity"`
+		Amount      float64 `json:"amount"`
+		Type        string  `json:"type"`
+		VatCode     string  `json:"vatCode"`
+		PaymentType string  `json:"paymentType"`
 	}
 
 	type CreateOrderRequest struct {
@@ -55,26 +49,20 @@ func (ic *InvoiceClient) AskApi() (string, error) {
 
 	order := CreateOrderRequest{
 		MerchantID:      ic.cfg.MerchantID,
-		MerchantOrderID: "test-order-123",
-		Amount:          100.00,
+		MerchantOrderID: "1",
+		Amount:          1.00,
 		CurrencyID:      "RUB",
 		VatAmount:       16.67,
 		BasketItems: []BasketItem{
 			{
-				SKU:            "sku123",
-				Name:           "Тест услуга",
-				Measure:        "шт.",
-				MeasureCode:    "796",
-				GrossWeight:    0,
-				NetWeight:      0,
-				Quantity:       1,
-				Amount:         100.00,
-				AmountWoVat:    83.33,
-				TotalAmount:    100.00,
-				TotalVatAmount: 16.67,
-				VatCode:        "RUS_VAT20",
-				Type:           "service",
-				PaymentType:    "full_prepayment",
+				SKU:         "sku123",
+				Name:        "Тест услуга",
+				Measure:     "шт.",
+				Quantity:    1,
+				Amount:      1.00,
+				VatCode:     "RUS_VAT20",
+				Type:        "service",
+				PaymentType: "full_prepayment",
 			},
 		},
 	}

@@ -9,12 +9,11 @@ import (
 	"syscall"
 	"time"
 
-	"lotBot/pkg/app"
-	"lotBot/pkg/db"
-
 	"github.com/BurntSushi/toml"
 	"github.com/go-pg/pg/v10"
 	"github.com/namsral/flag"
+	"lotBot/pkg/app"
+	"lotBot/pkg/db"
 )
 
 const appName = "lotBot"

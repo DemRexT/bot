@@ -22,12 +22,12 @@ type BotManager struct {
 	repo        db.LotbotRepo
 }
 
-func NewBotManager(logger embedlog.Logger, dbo db.DB, adminChatID int, cfg invoicebox.Config) *BotManager {
+func NewBotManager(DB db.DB, logger embedlog.Logger, adminChatID int, cfg invoicebox.Config) *BotManager {
 	return &BotManager{
 		Logger:      logger,
 		adminChatID: adminChatID,
 		ic:          invoicebox.NewInvoiceClient(logger, cfg),
-		repo:        db.NewLotbotRepo(dbo),
+		repo:        db.NewLotbotRepo(DB),
 	}
 }
 
