@@ -8,15 +8,16 @@
                 <Attribute Name="TgID" DBName="tgId" DBType="int8" GoType="int64" PK="false" Nullable="No" Addable="true" Updatable="true" Min="0" Max="0"></Attribute>
                 <Attribute Name="Inn" DBName="inn" DBType="int4" GoType="int" PK="false" Nullable="No" Addable="true" Updatable="true" Min="0" Max="0"></Attribute>
                 <Attribute Name="Scope" DBName="scope" DBType="text" GoType="string" PK="false" Nullable="No" Addable="true" Updatable="true" Min="0" Max="0"></Attribute>
-                <Attribute Name="UserName" DBName="userName" DBType="name" GoType="interface{}" PK="false" Nullable="No" Addable="true" Updatable="true" Min="0" Max="0"></Attribute>
                 <Attribute Name="Phone" DBName="phone" DBType="int4" GoType="int" PK="false" Nullable="No" Addable="true" Updatable="true" Min="0" Max="0"></Attribute>
                 <Attribute Name="StatusID" DBName="statusId" DBType="int4" GoType="int" PK="false" Nullable="No" Addable="true" Updatable="true" Min="0" Max="0"></Attribute>
+                <Attribute Name="UserName" DBName="userName" DBType="varchar" GoType="string" PK="false" Nullable="No" Addable="true" Updatable="true" Min="0" Max="128"></Attribute>
             </Attributes>
             <Searches>
                 <Search Name="IDs" AttrName="ID" SearchType="SEARCHTYPE_ARRAY"></Search>
                 <Search Name="NameILike" AttrName="Name" SearchType="SEARCHTYPE_ILIKE"></Search>
                 <Search Name="TgIDILike" AttrName="TgID" SearchType="SEARCHTYPE_ILIKE"></Search>
                 <Search Name="ScopeILike" AttrName="Scope" SearchType="SEARCHTYPE_ILIKE"></Search>
+                <Search Name="UserNameILike" AttrName="UserName" SearchType="SEARCHTYPE_ILIKE"></Search>
             </Searches>
         </Entity>
         <Entity Name="Student" Namespace="lotbot" Table="students">
@@ -50,7 +51,7 @@
                 <Attribute Name="ContactSlot" DBName="contactSlot" DBType="text" GoType="string" PK="false" Nullable="No" Addable="true" Updatable="true" Min="0" Max="0"></Attribute>
                 <Attribute Name="StatusID" DBName="statusId" DBType="int4" GoType="int" PK="false" Nullable="No" Addable="true" Updatable="true" Min="0" Max="0"></Attribute>
                 <Attribute Name="StudentID" DBName="studentId" DBType="int4" GoType="*int" PK="false" FK="Student" Nullable="Yes" Addable="true" Updatable="true" Min="0" Max="0"></Attribute>
-                <Attribute Name="Budget" DBName="budget" DBType="text" GoType="string" PK="false" Nullable="No" Addable="true" Updatable="true" Min="0" Max="0"></Attribute>
+                <Attribute Name="Budget" DBName="budget" DBType="float8" GoType="float64" PK="false" Nullable="No" Addable="true" Updatable="true" Min="0" Max="0"></Attribute>
             </Attributes>
             <Searches>
                 <Search Name="IDs" AttrName="ID" SearchType="SEARCHTYPE_ARRAY"></Search>
@@ -58,7 +59,6 @@
                 <Search Name="DescriptionILike" AttrName="Description" SearchType="SEARCHTYPE_ILIKE"></Search>
                 <Search Name="LinkILike" AttrName="Link" SearchType="SEARCHTYPE_ILIKE"></Search>
                 <Search Name="ContactSlotILike" AttrName="ContactSlot" SearchType="SEARCHTYPE_ILIKE"></Search>
-                <Search Name="BudgetILike" AttrName="Budget" SearchType="SEARCHTYPE_ILIKE"></Search>
             </Searches>
         </Entity>
     </Entities>
