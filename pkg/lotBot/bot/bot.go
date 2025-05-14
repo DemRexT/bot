@@ -903,6 +903,12 @@ func (bm BotManager) ModerationTask(ctx context.Context, b *bot.Bot, update *mod
 
 	company := companies[0]
 
+	budget, err := strconv.ParseFloat(data.Budget, 64)
+	if err != nil {
+		bm.Errorf("Ошибка при парсинге даты: %v", err)
+		return
+	}
+
 	task := &db.Task{
 		CompanyID:   company.ID,
 		Scope:       data.Direction,
@@ -912,7 +918,7 @@ func (bm BotManager) ModerationTask(ctx context.Context, b *bot.Bot, update *mod
 		ContactSlot: data.SlotCall,
 		StatusID:    0,
 		StudentID:   nil,
-		Budget:      data.Budget,
+		Budget:      budget,
 	}
 
 	_, err = bm.repo.AddTask(ctx, task)
