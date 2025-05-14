@@ -22,4 +22,5 @@ func (a *App) registerBotHandlers() {
 	a.b.RegisterHandler(botLib.HandlerTypeCallbackQueryData, bot.PatternCreateTask, botLib.MatchTypePrefix, a.bm.PrivateOnly(a.bm.CreateTask))
 	a.b.RegisterHandler(botLib.HandlerTypeCallbackQueryData, bot.PatternLater, botLib.MatchTypePrefix, a.bm.PrivateOnly(a.bm.Later))
 	a.b.RegisterHandler(botLib.HandlerTypeCallbackQueryData, bot.PatternTaskCheckResponse, botLib.MatchTypePrefix, a.bm.PrivateOnly(a.bm.ResponseVerificationTask))
+	a.b.RegisterHandler(botLib.HandlerTypeCallbackQueryData, bot.PatternVerificationToTheRequester, botLib.MatchTypePrefix, a.bm.PrivateOnly(a.bm.VerificationToTheRequester))
 }

@@ -4,11 +4,13 @@ Content-Type: application/json
 
 {
   "tgId": "1098511932",
-  "Name": "Данила",
-  "birthday": "22.34.43",
-  "city": "234234",
-  "skill": "Вариант 11",
-  "email": "23141234"
+  "Name": "Данила Глазатов",
+  "birthday": "30.05.2004",
+  "city": "Санкт-Петербург",
+  "skill": [
+    "Написание текстов"
+  ],
+  "email": "danila.glazatov1234@gmail.com"
 }
 
 ### Отправка данных компании
@@ -29,12 +31,12 @@ POST localhost:8075/formlot
 Content-Type: application/json
 
 {
-  "tgId":"1098511932",
-  "nameTask":"Название",
-  "direction": "Направление задач",
-  "description":"123",
-  "IMG":["14iNJPXyMRXemoHCBS7vjwegTyZO89GB0"],
-  "Link":"https://docs.google.com/forms/d/e/1FAIpQLScQgB6T74K87rZHi8a9qi-l565V3rrO5sKUlHe9LStZiRM3YA/",
-  "deadline":"345",
-  "slotCall":"345"
+  "tgId": "1098511932",
+  "nameTask": "название",
+  "description": "описание",
+  "budget": "бюджет",
+  "direction": "Подготовка презентаций",
+  "Link": "",
+  "deadline": "12.04.2025",
+  "slotCall": "12.04.2025"
 }

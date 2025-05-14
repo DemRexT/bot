@@ -7,43 +7,48 @@ import (
 	"github.com/go-telegram/bot"
 	"github.com/go-telegram/bot/models"
 	"log"
+	"lotBot/pkg/db"
 	"lotBot/pkg/embedlog"
 	"lotBot/pkg/invoicebox"
 	"strconv"
 	"strings"
+	"time"
 )
 
 type BotManager struct {
 	embedlog.Logger
 	adminChatID int
 	ic          *invoicebox.InvoiceClient
+	repo        db.LotbotRepo
 }
 
-func NewBotManager(logger embedlog.Logger, adminChatID int, cfg invoicebox.Config) *BotManager {
+func NewBotManager(logger embedlog.Logger, dbo db.DB, adminChatID int, cfg invoicebox.Config) *BotManager {
 	return &BotManager{
 		Logger:      logger,
 		adminChatID: adminChatID,
 		ic:          invoicebox.NewInvoiceClient(logger, cfg),
+		repo:        db.NewLotbotRepo(dbo),
 	}
 }
 
 const (
-	PatternStart             = "start"
-	PatternRole              = "role_"
-	PatternRegister          = "register_"
-	PatternSubmitModeration  = "submit_for_moderation_"
-	PatternAction            = "action_"
-	PatternViewTask          = "view_tasks"
-	PatternReady             = "ready_"
-	PatternCall              = "call"
-	PatternNot               = "not_"
-	PatternCreateTask        = "create_task"
-	PatternLater             = "later"
-	PatternTaskCheckResponse = "check_response"
-	UrlRegisterStudent       = "https://docs.google.com/forms/d/e/1FAIpQLSemsbNWCx2ewY25WlvQP_baBef6RUs1jF0w1p4obb99ieXFAw/viewform?usp=pp_url&entry.1082496981="
-	UrlRegisterBusiness      = "https://docs.google.com/forms/d/e/1FAIpQLSdz5iYc9UB6M3wOOrGGl-4jTywltlkl7AZgqXrNKIBqrY87mA/viewform?usp=pp_url&entry.213949143="
-	UrlCreateTask            = "https://docs.google.com/forms/d/e/1FAIpQLScQgB6T74K87rZHi8a9qi-l565V3rrO5sKUlHe9LStZiRM3YA/viewform?usp=pp_url&entry.995903952="
-	UrlTelegrammChat         = "https://web.telegram.org/a/#"
+	PatternStart                      = "start"
+	PatternRole                       = "role_"
+	PatternRegister                   = "register_"
+	PatternSubmitModeration           = "submit_for_moderation_"
+	PatternAction                     = "action_"
+	PatternViewTask                   = "view_tasks"
+	PatternReady                      = "ready_"
+	PatternCall                       = "call"
+	PatternNot                        = "not_"
+	PatternCreateTask                 = "create_task"
+	PatternLater                      = "later"
+	PatternTaskCheckResponse          = "check_response"
+	PatternVerificationToTheRequester = "verification_requester"
+	UrlRegisterStudent                = "https://docs.google.com/forms/d/e/1FAIpQLSemsbNWCx2ewY25WlvQP_baBef6RUs1jF0w1p4obb99ieXFAw/viewform?usp=pp_url&entry.1082496981="
+	UrlRegisterBusiness               = "https://docs.google.com/forms/d/e/1FAIpQLSdz5iYc9UB6M3wOOrGGl-4jTywltlkl7AZgqXrNKIBqrY87mA/viewform?usp=pp_url&entry.213949143="
+	UrlCreateTask                     = "https://docs.google.com/forms/d/e/1FAIpQLScQgB6T74K87rZHi8a9qi-l565V3rrO5sKUlHe9LStZiRM3YA/viewform?usp=pp_url&entry.995903952="
+	UrlTelegrammChat                  = "https://web.telegram.org/a/#"
 )
 
 func (bm BotManager) PrivateOnly(handler bot.HandlerFunc) bot.HandlerFunc {
@@ -132,11 +137,7 @@ func (bm BotManager) CallbackHandler(ctx context.Context, b *bot.Bot, update *mo
 	var kb *models.InlineKeyboardMarkup
 	switch update.CallbackQuery.Data {
 	case PatternRole + "1":
-		response = "Приветствие:\n✨ Добро пожаловать на EAZZY — сервис подросткового аутсорсинга!\n\n✔️ " +
-			"Возьмем ответственность за выполнение задачи на себя как полноценный бизнес-партнёр\n✔️ " +
-			"Подберем проверенных исполнителей, обучаем их и сопровождаем.\n✔️ " +
-			"Проконтролируем качество и отдадим результат, соответствующий ожиданиям\n\n" +
-			"Для начала давайте познакомимся\n🚀 Погнали!\n"
+		response = HiCompany
 		kb = &models.InlineKeyboardMarkup{
 			InlineKeyboard: [][]models.InlineKeyboardButton{
 				{
@@ -145,10 +146,7 @@ func (bm BotManager) CallbackHandler(ctx context.Context, b *bot.Bot, update *mo
 			},
 		}
 	case PatternRole + "2":
-		response = "Приветствие:\n✨ Добро пожаловать на EAZZY — сервис подросткового аутсорсинга!\n\n✔️ " +
-			"Поможем тебе сформулировать и описать твои умения и превратить их в доход\n✔️ " +
-			"Предоставим безопасные и честные рабочие возможности\n✔️ " +
-			"Дадим старт твоей карьере, поддержим и поможем в процессе\n\n\nДля начала давай знакомиться\n🚀 Погнали!"
+		response = HiStudent
 		kb = &models.InlineKeyboardMarkup{
 			InlineKeyboard: [][]models.InlineKeyboardButton{
 				{
@@ -198,7 +196,6 @@ func (bm BotManager) Register(ctx context.Context, b *bot.Bot, update *models.Up
 		}
 
 	case PatternRegister + "Business":
-
 		kb = &models.InlineKeyboardMarkup{
 			InlineKeyboard: [][]models.InlineKeyboardButton{
 				{
@@ -229,12 +226,12 @@ func (bm BotManager) Register(ctx context.Context, b *bot.Bot, update *models.Up
 func (bm BotManager) ModerationStudent(ctx context.Context, b *bot.Bot, update *models.Update) {
 
 	if b == nil {
-		log.Println("Ошибка: бот не инициализирован (nil)")
+		bm.Printf("Ошибка: бот не инициализирован (nil)")
 		return
 	}
 
 	if update == nil || update.CallbackQuery == nil {
-		log.Println("Ошибка: некорректный update объект")
+		bm.Printf("Ошибка: некорректный update объект")
 		return
 	}
 
@@ -253,6 +250,35 @@ func (bm BotManager) ModerationStudent(ctx context.Context, b *bot.Bot, update *
 	}
 
 	userID := data.Tgid
+
+	parsedBirthday, err := time.Parse("02.01.2006", data.Birthday) // формат должен соответствовать строке
+	if err != nil {
+		bm.Errorf("Ошибка парсинга даты: %v", err)
+		return
+	}
+
+	tgid, err := strconv.ParseInt(data.Tgid, 10, 64)
+	if err != nil {
+		bm.Errorf("Ошибка парсинга TgID: %v", err)
+		return
+	}
+
+	joinedSkill := strings.Join(data.Skill, ", ")
+
+	student := &db.Student{
+		TgID:     tgid,
+		Name:     data.Name,
+		Birthday: parsedBirthday,
+		City:     data.City,
+		Scope:    joinedSkill,
+		Email:    data.Email,
+		StatusID: 2,
+	}
+
+	_, err = bm.repo.AddStudent(ctx, student)
+	if err != nil {
+		bm.Errorf("Не удалось записать в бд: %v", err)
+	}
 
 	kb := &models.InlineKeyboardMarkup{
 		InlineKeyboard: [][]models.InlineKeyboardButton{
@@ -273,7 +299,7 @@ func (bm BotManager) ModerationStudent(ctx context.Context, b *bot.Bot, update *
 	response := fmt.Sprintf(ResponseStudentModeration,
 		data.Name, data.Birthday, data.City, data.Skill, data.Email)
 
-	_, err := b.SendMessage(ctx, &bot.SendMessageParams{
+	_, err = b.SendMessage(ctx, &bot.SendMessageParams{
 		ChatID:      bm.adminChatID,
 		Text:        response,
 		ParseMode:   "Markdown",
@@ -284,10 +310,9 @@ func (bm BotManager) ModerationStudent(ctx context.Context, b *bot.Bot, update *
 	}
 
 	_, err = b.SendMessage(ctx, &bot.SendMessageParams{
-		ChatID:      userID,
-		Text:        "Твоя заявка принята!\nПозвоним тебе для подтверждения и в течение часа подтвердим твою регистрацию в сервисе",
-		ParseMode:   "Markdown",
-		ReplyMarkup: kb,
+		ChatID:    userID,
+		Text:      "Твоя заявка принята!\nПозвоним тебе для подтверждения и в течение часа подтвердим твою регистрацию в сервисе",
+		ParseMode: "Markdown",
 	})
 	if err != nil {
 		bm.Errorf("Ошибка отправки сообщения: %v", err)
@@ -297,12 +322,12 @@ func (bm BotManager) ModerationStudent(ctx context.Context, b *bot.Bot, update *
 
 func (bm BotManager) ModerationBusines(ctx context.Context, b *bot.Bot, update *models.Update) {
 	if b == nil {
-		log.Println("Ошибка: бот не инициализирован (nil)")
+		bm.Printf("Ошибка: бот не инициализирован (nil)")
 		return
 	}
 
 	if update == nil || update.CallbackQuery == nil {
-		log.Println("Ошибка: некорректный update объект")
+		bm.Printf("Ошибка: некорректный update объект")
 		return
 	}
 
@@ -321,6 +346,38 @@ func (bm BotManager) ModerationBusines(ctx context.Context, b *bot.Bot, update *
 	}
 
 	userID := data.Tgid
+
+	tgid, err := strconv.ParseInt(data.Tgid, 10, 64)
+	if err != nil {
+		bm.Errorf("Ошибка парсинга TgID: %v", err)
+		return
+	}
+
+	inn, err := strconv.Atoi(data.INN)
+	if err != nil {
+		bm.Errorf("Ошибка преобразования INN: %v", err)
+		return
+	}
+
+	phone, err := strconv.Atoi(data.ContactPersonPhone)
+	if err != nil {
+		bm.Errorf("Ошибка преобразования телефона: %v", err)
+		return
+	}
+
+	company := &db.Company{
+		Name:     data.CompanyName,
+		TgID:     tgid,
+		Inn:      inn,
+		Scope:    data.FieldOfActivity,
+		Phone:    phone,
+		StatusID: 2,
+	}
+
+	_, err = bm.repo.AddCompany(ctx, company)
+	if err != nil {
+		bm.Errorf("Не удалось записать в бд: %v", err)
+	}
 
 	kb := &models.InlineKeyboardMarkup{
 		InlineKeyboard: [][]models.InlineKeyboardButton{
@@ -342,7 +399,7 @@ func (bm BotManager) ModerationBusines(ctx context.Context, b *bot.Bot, update *
 	response := fmt.Sprintf(ResponceBusinessModeration,
 		data.CompanyName, data.INN, data.FieldOfActivity, data.ContactPersonFullName, data.ContactPersonPhone)
 
-	_, err := b.SendMessage(ctx, &bot.SendMessageParams{
+	_, err = b.SendMessage(ctx, &bot.SendMessageParams{
 		ChatID:      bm.adminChatID,
 		Text:        response,
 		ParseMode:   "Markdown",
@@ -353,9 +410,8 @@ func (bm BotManager) ModerationBusines(ctx context.Context, b *bot.Bot, update *
 	}
 
 	_, err = b.SendMessage(ctx, &bot.SendMessageParams{
-		ChatID:      userID,
-		Text:        "Ваша заявка отправлена на модерацию\nВ течение часа вернемся с результатом",
-		ReplyMarkup: kb,
+		ChatID: userID,
+		Text:   "Ваша заявка отправлена на модерацию\nВ течение часюа вернемся с результатом",
 	})
 	if err != nil {
 		bm.Errorf("Ошибка отправки сообщения: %v", err)
@@ -384,33 +440,79 @@ func (bm BotManager) ModerationResponse(ctx context.Context, b *bot.Bot, update 
 		return
 	}
 
+	tgID, err := strconv.ParseInt(parts[2], 10, 64)
+	if err != nil {
+		log.Printf("ошибка парсинга TgID: %v", err)
+		return
+	}
+
 	var kb *models.InlineKeyboardMarkup
 	var response string
 	var responceAdmin string
-	switch parts[1] {
-	case "reject":
+	switch parts[3] {
+	case "Business":
 
-		response = "Заявка не прошла модерацию(\n\n" +
-			"Были введены некорректные или недостоверные данные.\n" +
-			"Пожалуйста, вернись к первому шагу и проверь, не допущена ли ошибка"
+		search := &db.CompanySearch{
+			TgID: &tgID,
+		}
+		pager := db.Pager{Page: 1, PageSize: 1}
 
-		responceAdmin = "Пользователь отклонен"
+		companies, err := bm.repo.CompaniesByFilters(ctx, search, pager)
+		if err != nil {
+			bm.Printf("ошибка поиска студента: %v", err)
+			return
+		}
+		if len(companies) == 0 {
+			bm.Printf("Студент не найден")
+			return
+		}
 
-		kb = &models.InlineKeyboardMarkup{
-			InlineKeyboard: [][]models.InlineKeyboardButton{
-				{
+		company := companies[0]
+		switch parts[1] {
+		case "reject":
+			responceAdmin = "Пользователь отклонен"
+
+			company.StatusID = 3
+
+			ok, err := bm.repo.UpdateCompany(ctx, &company, db.WithColumns("statusId"))
+			if err != nil {
+				bm.Printf("ошибка обновления: %v", err)
+				return
+			}
+			if ok {
+				bm.Printf("Статус Компанит успешно обновлён")
+			} else {
+				bm.Printf("Обновление не затронуло ни одной строки")
+			}
+
+			response = NoModeration
+
+			kb = &models.InlineKeyboardMarkup{
+				InlineKeyboard: [][]models.InlineKeyboardButton{
 					{
-						Text:         "Вернутся назад",
-						CallbackData: PatternStart,
+						{
+							Text:         "Вернутся назад",
+							CallbackData: PatternStart,
+						},
 					},
 				},
-			},
-		}
-	case "accept":
+			}
+		case "accept":
+			responceAdmin = "Пользователь подтвержден"
 
-		responceAdmin = "Пользователь подтвержден"
-		switch parts[3] {
-		case "Business":
+			company.StatusID = 1
+
+			ok, err := bm.repo.UpdateCompany(ctx, &company, db.WithColumns("statusId"))
+			if err != nil {
+				bm.Printf("ошибка обновления: %v", err)
+				return
+			}
+			if ok {
+				bm.Printf("Статус Компанит успешно обновлён")
+			} else {
+				bm.Printf("Обновление не затронуло ни одной строки")
+			}
+
 			response = "Модерация пройдена!\n\nХотите разместить первое задание?"
 			kb = &models.InlineKeyboardMarkup{
 				InlineKeyboard: [][]models.InlineKeyboardButton{
@@ -426,7 +528,69 @@ func (bm BotManager) ModerationResponse(ctx context.Context, b *bot.Bot, update 
 					},
 				},
 			}
-		case "Teen":
+		}
+	case "Teen":
+		responceAdmin = "Пользователь подтвержден"
+
+		search := &db.StudentSearch{
+			TgID: &tgID,
+		}
+		pager := db.Pager{Page: 1, PageSize: 1}
+
+		students, err := bm.repo.StudentsByFilters(ctx, search, pager)
+		if err != nil {
+			bm.Printf("ошибка поиска студента: %v", err)
+			return
+		}
+		if len(students) == 0 {
+			bm.Printf("Студент не найден")
+			return
+		}
+
+		student := students[0]
+		switch parts[1] {
+		case "reject":
+			responceAdmin = "Пользователь отклонен"
+
+			student.StatusID = 3
+
+			ok, err := bm.repo.UpdateStudent(ctx, &student, db.WithColumns("statusId"))
+			if err != nil {
+				bm.Printf("ошибка обновления: %v", err)
+				return
+			}
+			if ok {
+				bm.Printf("Статус студента успешно обновлён")
+			} else {
+				bm.Printf("Обновление не затронуло ни одной строки")
+			}
+			response = NoModeration
+
+			responceAdmin = "Пользователь отклонен"
+
+			kb = &models.InlineKeyboardMarkup{
+				InlineKeyboard: [][]models.InlineKeyboardButton{
+					{
+						{
+							Text:         "Вернутся назад",
+							CallbackData: PatternStart,
+						},
+					},
+				},
+			}
+		case "accept":
+			student.StatusID = 1
+
+			ok, err := bm.repo.UpdateStudent(ctx, &student, db.WithColumns("statusId"))
+			if err != nil {
+				bm.Printf("ошибка обновления: %v", err)
+				return
+			}
+			if ok {
+				bm.Printf("Статус студента успешно обновлён")
+			} else {
+				bm.Printf("Обновление не затронуло ни одной строки")
+			}
 			response = "Твои данные подтверждены!\nГотовимся отправить тебе первое задание!"
 			kb = &models.InlineKeyboardMarkup{
 				InlineKeyboard: [][]models.InlineKeyboardButton{
@@ -439,7 +603,6 @@ func (bm BotManager) ModerationResponse(ctx context.Context, b *bot.Bot, update 
 				},
 			}
 		}
-
 	default:
 		response = "Неизвестная команда: " + update.CallbackQuery.Data
 	}
@@ -483,13 +646,9 @@ func (bm BotManager) ViewTasks(ctx context.Context, b *bot.Bot, update *models.U
 	}
 
 	_, err = b.EditMessageText(ctx, &bot.EditMessageTextParams{
-		ChatID:    update.CallbackQuery.Message.Message.Chat.ID,
-		MessageID: update.CallbackQuery.Message.Message.ID,
-		Text: "У нас есть для тебя задание!\nПожалуйста. ознакомься с заданием.\n" +
-			"Срок для изучения задания - до ЧЧ.ММ ДД.ММ\n" +
-			"Пришлем напоминалку поле этого срока и уточним готовность.\n" +
-			"И помни: мы не выполним задание за тебя,\nно обязательно поможем и подскажем,\n" +
-			"если будет трудно или непонятно!",
+		ChatID:      update.CallbackQuery.Message.Message.Chat.ID,
+		MessageID:   update.CallbackQuery.Message.Message.ID,
+		Text:        NewTask,
 		ReplyMarkup: kb,
 	})
 	if err != nil {
@@ -654,41 +813,54 @@ func (bm BotManager) NotReady(ctx context.Context, b *bot.Bot, update *models.Up
 }
 
 func (bm BotManager) CreateTask(ctx context.Context, b *bot.Bot, update *models.Update) {
-	_, err := b.AnswerCallbackQuery(ctx, &bot.AnswerCallbackQueryParams{
-		CallbackQueryID: update.CallbackQuery.ID,
-		ShowAlert:       false,
-	})
-	if err != nil {
-		bm.Errorf("%v", err)
+	var userID int64
+	var chatID int64
+
+	if update.Message != nil {
+		userID = update.Message.From.ID
+		chatID = update.Message.Chat.ID
+	} else if update.CallbackQuery != nil {
+		userID = update.CallbackQuery.From.ID
+		chatID = update.CallbackQuery.Message.Message.Chat.ID
+
+		_, _ = b.AnswerCallbackQuery(ctx, &bot.AnswerCallbackQueryParams{
+			CallbackQueryID: update.CallbackQuery.ID,
+			ShowAlert:       false,
+		})
+	} else {
+		bm.Errorf("CreateTask: ни Message, ни CallbackQuery не найдены")
+		return
 	}
+
 	kb := &models.InlineKeyboardMarkup{
 		InlineKeyboard: [][]models.InlineKeyboardButton{
 			{
 				{
 					Text: "Создать лот",
-					URL:  UrlCreateTask + strconv.FormatInt(update.CallbackQuery.From.ID, 10),
+					URL:  UrlCreateTask + strconv.FormatInt(userID, 10),
 				},
 			},
 		},
 	}
 
-	_, err = b.EditMessageText(ctx, &bot.EditMessageTextParams{
-		ChatID:      update.CallbackQuery.Message.Message.Chat.ID,
-		MessageID:   update.CallbackQuery.Message.Message.ID,
-		Text:        "Данные о лоте отправлены модераторам",
+	_, err := b.SendMessage(ctx, &bot.SendMessageParams{
+		ChatID:      chatID,
+		Text:        "Пожалуйста, заполните форму по ссылке",
 		ReplyMarkup: kb,
 	})
-
+	if err != nil {
+		bm.Errorf("Ошибка отправки сообщения: %v", err)
+	}
 }
 
 func (bm BotManager) ModerationTask(ctx context.Context, b *bot.Bot, update *models.Update) {
 	if b == nil {
-		log.Println("Ошибка: бот не инициализирован (nil)")
+		bm.Printf("Ошибка: бот не инициализирован (nil)")
 		return
 	}
 
 	if update == nil || update.CallbackQuery == nil {
-		log.Println("Ошибка: некорректный update объект")
+		bm.Printf("Ошибка: некорректный update объект")
 		return
 	}
 
@@ -704,6 +876,48 @@ func (bm BotManager) ModerationTask(ctx context.Context, b *bot.Bot, update *mod
 		}
 
 		return
+	}
+
+	tgid, err := strconv.ParseInt(data.TgId, 10, 64)
+	if err != nil {
+		bm.Errorf("Ошибка парсинга TgID: %v", err)
+		return
+	}
+
+	parsedDeadline, err := time.Parse("02.01.2006", data.Deadline) // формат должен соответствовать строке
+	if err != nil {
+		bm.Errorf("Ошибка парсинга даты: %v", err)
+		return
+	}
+
+	search := &db.CompanySearch{
+		TgID: &tgid,
+	}
+	pager := db.Pager{Page: 1, PageSize: 1}
+
+	companies, err := bm.repo.CompaniesByFilters(ctx, search, pager)
+	if err != nil || len(companies) == 0 {
+		bm.Errorf("Ошибка при поиске компании по TgID=%d: %v", tgid, err)
+		return
+	}
+
+	company := companies[0]
+
+	task := &db.Task{
+		CompanyID:   company.ID,
+		Scope:       data.Direction,
+		Description: data.Description,
+		Link:        data.Link,
+		Deadline:    parsedDeadline,
+		ContactSlot: data.SlotCall,
+		StatusID:    0,
+		StudentID:   nil,
+		Budget:      data.Budget,
+	}
+
+	_, err = bm.repo.AddTask(ctx, task)
+	if err != nil {
+		bm.Errorf("Не удалось записать в бд: %v", err)
 	}
 
 	response := fmt.Sprintf(ResponceTaskModeration,
@@ -736,7 +950,7 @@ func (bm BotManager) ModerationTask(ctx context.Context, b *bot.Bot, update *mod
 		params.ReplyMarkup = kb
 	}
 
-	_, err := b.SendMessage(ctx, params)
+	_, err = b.SendMessage(ctx, params)
 	if err != nil {
 		bm.Errorf("Ошибка отправки сообщения: %v", err)
 	}
@@ -840,33 +1054,20 @@ func (bm BotManager) VerificationTask(ctx context.Context, b *bot.Bot, update *m
 
 func (bm BotManager) VerificationRequest(ctx context.Context, b *bot.Bot, update *models.Update) {
 
+	businessID := int64(1098511932)
+
 	kbAdmin := &models.InlineKeyboardMarkup{
 		InlineKeyboard: [][]models.InlineKeyboardButton{
 			{
 				{
-					Text:         "Готово",
-					CallbackData: PatternTaskCheckResponse + "_completed_" + strconv.FormatInt(update.Message.From.ID, 10),
-				},
-				{
-					Text:         "Отправить на доработку",
-					CallbackData: PatternTaskCheckResponse + "_revision_" + strconv.FormatInt(update.Message.From.ID, 10),
+					Text:         "Отправить на проверку заказчику",
+					CallbackData: PatternVerificationToTheRequester + "_" + strconv.FormatInt(update.Message.From.ID, 10) + "_" + strconv.FormatInt(businessID, 10),
 				},
 			},
 		},
 	}
 
-	kbBusiness := &models.InlineKeyboardMarkup{
-		InlineKeyboard: [][]models.InlineKeyboardButton{
-			{
-				{
-					Text:         "Назначить созвон для проверки",
-					CallbackData: PatternCall,
-				},
-			},
-		},
-	}
 	nameTask := "Название задания"
-	businessID := int64(1098511932)
 
 	response := fmt.Sprintf(RequestTaskVerification,
 		nameTask, businessID, update.Message.From.ID)
@@ -882,12 +1083,68 @@ func (bm BotManager) VerificationRequest(ctx context.Context, b *bot.Bot, update
 		bm.Errorf("Ошибка отправки сообщения: %v", err)
 		return
 	}
+}
+
+func (bm BotManager) VerificationToTheRequester(ctx context.Context, b *bot.Bot, update *models.Update) {
+	_, err := b.AnswerCallbackQuery(ctx, &bot.AnswerCallbackQueryParams{
+		CallbackQueryID: update.CallbackQuery.ID,
+		ShowAlert:       false,
+	})
+	if err != nil {
+		bm.Errorf("%v", err)
+	}
+
+	parts := strings.Split(update.CallbackQuery.Data, "_")
+
+	if len(parts) < 4 {
+		bm.Errorf("не удалось отобразить карточку пользователя, len(parts) < 3\n")
+		return
+	}
+
+	kbBusiness := &models.InlineKeyboardMarkup{
+		InlineKeyboard: [][]models.InlineKeyboardButton{
+			{
+				{
+					Text:         "Назначить созвон для проверки",
+					CallbackData: PatternCall,
+				},
+			},
+		},
+	}
+
+	kbAdmin := &models.InlineKeyboardMarkup{
+		InlineKeyboard: [][]models.InlineKeyboardButton{
+			{
+				{
+					Text:         "Готово",
+					CallbackData: PatternTaskCheckResponse + "_completed_" + parts[2],
+				},
+				{
+					Text:         "Отправить на доработку",
+					CallbackData: PatternTaskCheckResponse + "_revision_" + parts[2],
+				},
+			},
+		},
+	}
 
 	_, err = b.SendMessage(ctx, &bot.SendMessageParams{
-		ChatID:      businessID,
-		Text:        response,
+		ChatID:      parts[3],
+		Text:        update.CallbackQuery.Message.Message.Text,
 		ParseMode:   "Markdown",
 		ReplyMarkup: kbBusiness,
+	})
+
+	if err != nil {
+		bm.Errorf("Ошибка отправки сообщения: %v", err)
+		return
+	}
+
+	_, err = b.EditMessageText(ctx, &bot.EditMessageTextParams{
+		ChatID:      bm.adminChatID,
+		MessageID:   update.CallbackQuery.Message.Message.ID,
+		Text:        update.CallbackQuery.Message.Message.Text,
+		ParseMode:   "Markdown",
+		ReplyMarkup: kbAdmin,
 	})
 
 	if err != nil {
@@ -911,12 +1168,13 @@ func (bm BotManager) ResponseVerificationTask(ctx context.Context, b *bot.Bot, u
 		bm.Errorf("не удалось отобразить карточку пользователя, len(parts) < 4\n")
 		return
 	}
+	bm.Printf("%v", update.CallbackQuery.Data)
 	var response string
 	switch parts[2] {
 	case "completed":
-		response = "Задание проверено - все ок, но нужно кое-что доработать!"
-	case "revision":
 		response = "Принято!\nЗаказчик принял твою работу! Ожидай оплаты)"
+	case "revision":
+		response = "Задание проверено - все ок, но нужно кое-что доработать!"
 	}
 
 	_, err = b.SendMessage(ctx, &bot.SendMessageParams{
