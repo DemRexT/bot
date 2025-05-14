@@ -61,7 +61,7 @@ func main() {
 		invoiceboxHandler := &invoicebox.WebhookHandlerDependencies{
 			DB: dbconn,
 		}
-		http.HandleFunc("/invoicebox-webhook", invoiceboxHandler.InvoiceboxWebhook)
+		http.HandleFunc("/invoicebox-webhook", invoiceboxHandler.WebhookHandler)
 		fmt.Println("Webhook port 8080")
 		log.Fatal(http.ListenAndServe(":8080", nil))
 	}()

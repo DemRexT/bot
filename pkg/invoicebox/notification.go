@@ -24,7 +24,7 @@ type InvoiceNotification struct {
 	CurrencyID string  `json:"currencyId"`
 }
 
-func (h *WebhookHandlerDependencies) InvoiceboxWebhook(w http.ResponseWriter, r *http.Request) {
+func (h *WebhookHandlerDependencies) WebhookHandler(w http.ResponseWriter, r *http.Request) {
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
 		http.Error(w, "can't read body", http.StatusBadRequest)
