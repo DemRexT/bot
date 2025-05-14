@@ -8,10 +8,11 @@ import (
 )
 
 type InvoiceNotification struct {
-	Type   string  `json:"type"`
-	TaskID string  `json:"merchantOrderId"`
-	Amount float64 `json:"amount"`
-	Status string  `json:"status"`
+	Type       string  `json:"type"`
+	TaskID     string  `json:"merchantOrderId"`
+	Amount     float64 `json:"amount"`
+	Status     string  `json:"status"`
+	CurrencyID string  `json:"currencyId"`
 }
 
 func WebhookHandler(w http.ResponseWriter, r *http.Request) {
@@ -41,7 +42,7 @@ func WebhookHandler(w http.ResponseWriter, r *http.Request) {
 
 	fmt.Printf("Тип: %s\n", notification.Type)
 	fmt.Printf("Статус: %s\n", notification.Status)
-	fmt.Printf("Сумма: %s %s\n", notification.Amount, notification.Currency)
+	fmt.Printf("Сумма: %s %s\n", notification.Amount, notification.CurrencyID)
 
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte("OK"))
