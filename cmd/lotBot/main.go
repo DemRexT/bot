@@ -1,12 +1,9 @@
 package main
 
 import (
-	"fmt"
 	"io"
 	"log"
-	"lotBot/pkg/invoicebox"
 	"math/rand"
-	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
@@ -56,15 +53,6 @@ func main() {
 
 	// create & run app
 	application := app.New(appName, *flVerbose, cfg, dbc, dbconn)
-
-	go func() {
-		invoiceboxHandler := &invoicebox.WebhookHandlerDependencies{
-			DB: dbconn,
-		}
-		http.HandleFunc("/invoicebox-webhook", invoiceboxHandler.WebhookHandler)
-		fmt.Println("Webhook port 8080")
-		log.Fatal(http.ListenAndServe(":8080", nil))
-	}()
 
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, os.Interrupt, syscall.SIGTERM)

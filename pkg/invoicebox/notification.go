@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"lotBot/pkg/embedlog"
 	"net/http"
 	"strconv"
 
@@ -12,8 +13,13 @@ import (
 	"github.com/go-pg/pg/v10"
 )
 
-type WebhookHandlerDependencies struct {
+type WebhookHandler struct {
 	DB *pg.DB
+	embedlog.Logger
+}
+
+func NewWebhookHandler(DB *pg.DB, logger embedlog.Logger) *WebhookHandler {
+	return &WebhookHandler{DB: DB, Logger: logger}
 }
 
 type InvoiceNotification struct {
@@ -24,7 +30,7 @@ type InvoiceNotification struct {
 	CurrencyID string  `json:"currencyId"`
 }
 
-func (h *WebhookHandlerDependencies) WebhookHandler(w http.ResponseWriter, r *http.Request) {
+func (h *WebhookHandler) HandleConfirmation(w http.ResponseWriter, r *http.Request) {
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
 		http.Error(w, "can't read body", http.StatusBadRequest)
@@ -58,7 +64,7 @@ func (h *WebhookHandlerDependencies) WebhookHandler(w http.ResponseWriter, r *ht
 		Where("taskId = ?", taskID).
 		Select()
 	if err != nil {
-		http.Error(w, "task not found", http.StatusNotFound)
+		h.Errorf("task not found", http.StatusNotFound)
 		return
 	}
 
