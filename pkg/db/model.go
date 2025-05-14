@@ -135,7 +135,7 @@ type Task struct {
 	ContactSlot string    `pg:"contactSlot,use_zero"`
 	StatusID    int       `pg:"statusId,use_zero"`
 	StudentID   *int      `pg:"studentId"`
-	Budget      string    `pg:"budget,use_zero"`
+	Budget      float64   `pg:"budget,use_zero"`
 
 	Company *Company `pg:"fk:companyId,rel:has-one"`
 	Student *Student `pg:"fk:studentId,rel:has-one"`
