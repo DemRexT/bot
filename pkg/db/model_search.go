@@ -63,7 +63,6 @@ type CompanySearch struct {
 	UserName      *interface{}
 	Phone         *int
 	StatusID      *int
-	UserName      *string
 	IDs           []int
 	NameILike     *string
 	TgIDILike     *int64
@@ -98,9 +97,6 @@ func (cs *CompanySearch) Apply(query *orm.Query) *orm.Query {
 	}
 	if cs.StatusID != nil {
 		cs.where(query, Tables.Company.Alias, Columns.Company.StatusID, cs.StatusID)
-	}
-	if cs.UserName != nil {
-		cs.where(query, Tables.Company.Alias, Columns.Company.UserName, cs.UserName)
 	}
 	if len(cs.IDs) > 0 {
 		Filter{Columns.Company.ID, cs.IDs, SearchTypeArray, false}.Apply(query)

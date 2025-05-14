@@ -1,6 +1,6 @@
 ﻿-- =============================================================================
 -- Diagram Name: apisrv
--- Created on: 5/13/2025 1:59:48 AM
+-- Created on: 5/14/2025 1:46:38 PM
 -- Diagram Version: 
 -- =============================================================================
 
@@ -26,7 +26,7 @@ CREATE TABLE "tasks" (
 	"contactSlot" text NOT NULL,
 	"statusId" int4 NOT NULL,
 	"studentId" int4,
-	"budget" text NOT NULL,
+	"budget" float8 NOT NULL,
 	PRIMARY KEY("taskId")
 );
 
