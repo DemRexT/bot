@@ -10,7 +10,7 @@ import (
 
 var Columns = struct {
 	Company struct {
-		ID, Name, TgID, Inn, Scope, UserName, Phone, StatusID string
+		ID, Name, TgID, Inn, Scope, Phone, StatusID, UserName string
 	}
 	Student struct {
 		ID, TgID, Name, Birthday, City, Scope, Email, StatusID string
@@ -22,16 +22,16 @@ var Columns = struct {
 	}
 }{
 	Company: struct {
-		ID, Name, TgID, Inn, Scope, UserName, Phone, StatusID string
+		ID, Name, TgID, Inn, Scope, Phone, StatusID, UserName string
 	}{
 		ID:       "companyId",
 		Name:     "name",
 		TgID:     "tgId",
 		Inn:      "inn",
 		Scope:    "scope",
-		UserName: "userName",
 		Phone:    "phone",
 		StatusID: "statusId",
+		UserName: "userName",
 	},
 	Student: struct {
 		ID, TgID, Name, Birthday, City, Scope, Email, StatusID string
@@ -100,14 +100,14 @@ var Tables = struct {
 type Company struct {
 	tableName struct{} `pg:"companies,alias:t,discard_unknown_columns"`
 
-	ID       int         `pg:"companyId,pk"`
-	Name     string      `pg:"name,use_zero"`
-	TgID     int64       `pg:"tgId,use_zero"`
-	Inn      int         `pg:"inn,use_zero"`
-	Scope    string      `pg:"scope,use_zero"`
-	UserName interface{} `pg:"-"` // unsupported
-	Phone    int         `pg:"phone,use_zero"`
-	StatusID int         `pg:"statusId,use_zero"`
+	ID       int    `pg:"companyId,pk"`
+	Name     string `pg:"name,use_zero"`
+	TgID     int64  `pg:"tgId,use_zero"`
+	Inn      int    `pg:"inn,use_zero"`
+	Scope    string `pg:"scope,use_zero"`
+	Phone    int    `pg:"phone,use_zero"`
+	StatusID int    `pg:"statusId,use_zero"`
+	UserName string `pg:"userName,use_zero"`
 }
 
 type Student struct {

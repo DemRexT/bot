@@ -4,8 +4,22 @@
 //lint:file-ignore U1000 ignore unused code, it's generated
 package db
 
+import (
+	"unicode/utf8"
+)
+
 const (
 	ErrEmptyValue = "empty"
 	ErrMaxLength  = "len"
 	ErrWrongValue = "value"
 )
+
+func (c Company) Validate() (errors map[string]string, valid bool) {
+	errors = map[string]string{}
+
+	if utf8.RuneCountInString(c.UserName) > 128 {
+		errors[Columns.Company.UserName] = ErrMaxLength
+	}
+
+	return errors, len(errors) == 0
+}
