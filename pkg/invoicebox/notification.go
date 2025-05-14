@@ -9,17 +9,19 @@ import (
 	"strconv"
 
 	"lotBot/pkg/db"
-
-	"github.com/go-pg/pg/v10"
 )
 
 type WebhookHandler struct {
-	DB *pg.DB
+	DB db.DB
 	embedlog.Logger
+	repo db.LotbotRepo
 }
 
-func NewWebhookHandler(DB *pg.DB, logger embedlog.Logger) *WebhookHandler {
-	return &WebhookHandler{DB: DB, Logger: logger}
+func NewWebhookHandler(DB db.DB, logger embedlog.Logger) *WebhookHandler {
+	return &WebhookHandler{
+		DB: DB, Logger: logger,
+		repo: db.NewLotbotRepo(DB),
+	}
 }
 
 type InvoiceNotification struct {
@@ -59,12 +61,9 @@ func (h *WebhookHandler) HandleConfirmation(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	task := &db.Task{}
-	err = h.DB.Model(task).
-		Where("taskId = ?", taskID).
-		Select()
+	task, err := h.repo.TaskByID(r.Context(), taskID)
 	if err != nil {
-		h.Errorf("task not found", http.StatusNotFound)
+		h.Errorf("Task search error %v", err)
 		return
 	}
 

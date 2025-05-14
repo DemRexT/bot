@@ -59,7 +59,7 @@ func New(appName string, verbose bool, cfg Config, db db.DB, dbc *pg.DB) *App {
 	a.echo.HidePort = true
 	a.echo.IPExtractor = echo.ExtractIPFromRealIPHeader()
 
-	a.bm = botLogic.NewBotManager(a.Logger, a.cfg.Bot.AdminChatID, a.cfg.InvoiceConfig)
+	a.bm = botLogic.NewBotManager(a.db, a.Logger, a.cfg.Bot.AdminChatID, a.cfg.InvoiceConfig)
 
 	b, err := bot.New(cfg.Bot.Token)
 	if err != nil {
@@ -87,7 +87,7 @@ func (a *App) Run() error {
 	}
 
 	go func() {
-		invoiceboxHandler := invoicebox.NewWebhookHandler(a.dbc, a.Logger)
+		invoiceboxHandler := invoicebox.NewWebhookHandler(a.db, a.Logger)
 
 		http.HandleFunc("/invoicebox-webhook", invoiceboxHandler.HandleConfirmation)
 		fmt.Println("Webhook port 8080")
