@@ -60,14 +60,14 @@ mfd-model:
 mfd-repo: --check-ns
 	@mfd-generator repo -m ./docs/model/lotbot.mfd -p db -o ./pkg/db -n $(NS)
 mfd-vt-xml:
-	@mfd-generator xml-vt -m ./docs/model/apisrv.mfd
+	@mfd-generator xml-vt -m ./docs/model/lotbot.mfd
 mfd-vt-rpc: --check-ns
-	@mfd-generator vt -m docs/model/apisrv.mfd -o pkg/vt -p vt -x apisrv/pkg/db -n $(NS)
+	@mfd-generator vt -m docs/model/lotbot.mfd -o pkg/vt -p vt -x lotbot/pkg/db -n $(NS)
 mfd-xml-lang:
 	#TODO: add namespaces support for xml-lang command
-	@mfd-generator xml-lang  -m ./docs/model/apisrv.mfd
+	@mfd-generator xml-lang  -m ./docs/model/lotbot.mfd
 mfd-vt-template: --check-ns type-script-client
-	@mfd-generator template -m docs/model/apisrv.mfd  -o ../gold-vt/ -n $(NS)
+	@mfd-generator template -m docs/model/lotbot.mfd  -o ../gold-vt/ -n $(NS)
 
 type-script-client: generate
 	@go run $(GOFLAGS) $(MAIN) -config=cfg/local.toml -ts_client > ../gold-vt/src/services/api/factory.ts

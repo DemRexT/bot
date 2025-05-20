@@ -251,12 +251,6 @@ func (bm BotManager) ModerationStudent(ctx context.Context, b *bot.Bot, update *
 
 	userID := data.Tgid
 
-	parsedBirthday, err := time.Parse("02.01.2006", data.Birthday) // формат должен соответствовать строке
-	if err != nil {
-		bm.Errorf("Ошибка парсинга даты: %v", err)
-		return
-	}
-
 	tgid, err := strconv.ParseInt(data.Tgid, 10, 64)
 	if err != nil {
 		bm.Errorf("Ошибка парсинга TgID: %v", err)
@@ -268,7 +262,7 @@ func (bm BotManager) ModerationStudent(ctx context.Context, b *bot.Bot, update *
 	student := &db.Student{
 		TgID:     tgid,
 		Name:     data.Name,
-		Birthday: parsedBirthday,
+		Birthday: data.Birthday,
 		City:     data.City,
 		Scope:    joinedSkill,
 		Email:    data.Email,
@@ -353,24 +347,12 @@ func (bm BotManager) ModerationBusines(ctx context.Context, b *bot.Bot, update *
 		return
 	}
 
-	inn, err := strconv.Atoi(data.INN)
-	if err != nil {
-		bm.Errorf("Ошибка преобразования INN: %v", err)
-		return
-	}
-
-	phone, err := strconv.Atoi(data.ContactPersonPhone)
-	if err != nil {
-		bm.Errorf("Ошибка преобразования телефона: %v", err)
-		return
-	}
-
 	company := &db.Company{
 		Name:     data.CompanyName,
 		TgID:     tgid,
-		Inn:      inn,
+		Inn:      data.INN,
 		Scope:    data.FieldOfActivity,
-		Phone:    phone,
+		Phone:    data.ContactPersonPhone,
 		StatusID: 2,
 	}
 

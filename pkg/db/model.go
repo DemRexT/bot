@@ -10,43 +10,43 @@ import (
 
 var Columns = struct {
 	Company struct {
-		ID, Name, TgID, Inn, Scope, Phone, StatusID, UserName string
+		ID, Name, TgID, Scope, StatusID, UserName, Inn, Phone string
 	}
 	Student struct {
-		ID, TgID, Name, Birthday, City, Scope, Email, StatusID string
+		ID, TgID, Name, City, Scope, Email, StatusID, Birthday string
 	}
 	Task struct {
-		ID, CompanyID, Scope, Description, Link, Deadline, ContactSlot, StatusID, StudentID, Budget string
+		ID, CompanyID, Scope, Description, Link, Deadline, ContactSlot, StatusID, StudentID, Budget, YougileID string
 
 		Company, Student string
 	}
 }{
 	Company: struct {
-		ID, Name, TgID, Inn, Scope, Phone, StatusID, UserName string
+		ID, Name, TgID, Scope, StatusID, UserName, Inn, Phone string
 	}{
 		ID:       "companyId",
 		Name:     "name",
 		TgID:     "tgId",
-		Inn:      "inn",
 		Scope:    "scope",
-		Phone:    "phone",
 		StatusID: "statusId",
 		UserName: "userName",
+		Inn:      "inn",
+		Phone:    "phone",
 	},
 	Student: struct {
-		ID, TgID, Name, Birthday, City, Scope, Email, StatusID string
+		ID, TgID, Name, City, Scope, Email, StatusID, Birthday string
 	}{
 		ID:       "studentId",
 		TgID:     "tgId",
 		Name:     "name",
-		Birthday: "birthday",
 		City:     "city",
 		Scope:    "scope",
 		Email:    "email",
 		StatusID: "statusId",
+		Birthday: "birthday",
 	},
 	Task: struct {
-		ID, CompanyID, Scope, Description, Link, Deadline, ContactSlot, StatusID, StudentID, Budget string
+		ID, CompanyID, Scope, Description, Link, Deadline, ContactSlot, StatusID, StudentID, Budget, YougileID string
 
 		Company, Student string
 	}{
@@ -60,6 +60,7 @@ var Columns = struct {
 		StatusID:    "statusId",
 		StudentID:   "studentId",
 		Budget:      "budget",
+		YougileID:   "yougileId",
 
 		Company: "Company",
 		Student: "Student",
@@ -103,24 +104,24 @@ type Company struct {
 	ID       int    `pg:"companyId,pk"`
 	Name     string `pg:"name,use_zero"`
 	TgID     int64  `pg:"tgId,use_zero"`
-	Inn      int    `pg:"inn,use_zero"`
 	Scope    string `pg:"scope,use_zero"`
-	Phone    int    `pg:"phone,use_zero"`
 	StatusID int    `pg:"statusId,use_zero"`
 	UserName string `pg:"userName,use_zero"`
+	Inn      string `pg:"inn,use_zero"`
+	Phone    string `pg:"phone,use_zero"`
 }
 
 type Student struct {
 	tableName struct{} `pg:"students,alias:t,discard_unknown_columns"`
 
-	ID       int       `pg:"studentId,pk"`
-	TgID     int64     `pg:"tgId,use_zero"`
-	Name     string    `pg:"name,use_zero"`
-	Birthday time.Time `pg:"birthday,use_zero"`
-	City     string    `pg:"city,use_zero"`
-	Scope    string    `pg:"scope,use_zero"`
-	Email    string    `pg:"email,use_zero"`
-	StatusID int       `pg:"statusId,use_zero"`
+	ID       int    `pg:"studentId,pk"`
+	TgID     int64  `pg:"tgId,use_zero"`
+	Name     string `pg:"name,use_zero"`
+	City     string `pg:"city,use_zero"`
+	Scope    string `pg:"scope,use_zero"`
+	Email    string `pg:"email,use_zero"`
+	StatusID int    `pg:"statusId,use_zero"`
+	Birthday string `pg:"birthday,use_zero"`
 }
 
 type Task struct {
@@ -136,6 +137,7 @@ type Task struct {
 	StatusID    int       `pg:"statusId,use_zero"`
 	StudentID   *int      `pg:"studentId"`
 	Budget      float64   `pg:"budget,use_zero"`
+	YougileID   *string   `pg:"yougileId"`
 
 	Company *Company `pg:"fk:companyId,rel:has-one"`
 	Student *Student `pg:"fk:studentId,rel:has-one"`
