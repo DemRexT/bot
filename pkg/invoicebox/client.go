@@ -39,6 +39,7 @@ func (ic *InvoiceClient) AskApi() (string, error) {
 	}
 
 	type CreateOrderRequest struct {
+		Description     string       `json:"description"`
 		MerchantID      string       `json:"merchantId"`
 		MerchantOrderID string       `json:"merchantOrderId"`
 		Amount          float64      `json:"amount"`
@@ -48,18 +49,19 @@ func (ic *InvoiceClient) AskApi() (string, error) {
 	}
 
 	order := CreateOrderRequest{
+		Description:     "Оплата услуг по оформлению бизнес-аккаунтов (Яндекс Бизнес, 2Гис)",
 		MerchantID:      ic.cfg.MerchantID,
 		MerchantOrderID: "1",
-		Amount:          1.00,
+		Amount:          3000.00,
 		CurrencyID:      "RUB",
-		VatAmount:       16.67,
+
 		BasketItems: []BasketItem{
 			{
 				SKU:         "sku123",
-				Name:        "Тест услуга",
+				Name:        "Оформление бизнес-аккаунтов",
 				Measure:     "шт.",
 				Quantity:    1,
-				Amount:      1.00,
+				Amount:      3000.00,
 				VatCode:     "RUS_VAT20",
 				Type:        "service",
 				PaymentType: "full_prepayment",

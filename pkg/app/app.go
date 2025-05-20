@@ -2,7 +2,10 @@ package app
 
 import (
 	"context"
+	"fmt"
+	"log"
 	"lotBot/pkg/invoicebox"
+	"net/http"
 	"time"
 
 	"lotBot/pkg/db"
@@ -82,6 +85,13 @@ func (a *App) Run() error {
 	if err != nil {
 		return err
 	}
+
+	go func() {
+		invoiceboxHandler := invoicebox.NewWebhookHandler(a.db, a.Logger)
+		http.HandleFunc("/invoicebox-webhook", invoiceboxHandler.HandleConfirmation)
+		fmt.Println("Webhook port 8080")
+		log.Fatal(http.ListenAndServe(":8080", nil))
+	}()
 
 	return a.runHTTPServer(a.cfg.Server.Host, a.cfg.Server.Port)
 }

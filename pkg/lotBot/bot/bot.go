@@ -20,6 +20,7 @@ type BotManager struct {
 	adminChatID int
 	ic          *invoicebox.InvoiceClient
 	repo        db.LotbotRepo
+	icWh        *invoicebox.WebhookHandler
 }
 
 func NewBotManager(DB db.DB, logger embedlog.Logger, adminChatID int, cfg invoicebox.Config) *BotManager {
@@ -122,6 +123,19 @@ func (bm BotManager) PayHandler(ctx context.Context, b *bot.Bot, update *models.
 		Text:   fmt.Sprintf("Счёт успешно создан! Перейдите по ссылке для оплаты:\n%s", redirectURL),
 	})
 }
+
+func (bm BotManager) UpdateTaskPaymentStatus(status string, chatID int64, ctx context.Context, b *bot.Bot, update *models.Update) {
+	text := "❌ Оплата не удалась"
+	if status == "success" {
+		text = "✅ Оплата прошла успешно!"
+	}
+
+	_, _ = b.SendMessage(context.Background(), &bot.SendMessageParams{
+		ChatID: chatID,
+		Text:   text,
+	})
+}
+
 func (bm BotManager) CallbackHandler(ctx context.Context, b *bot.Bot, update *models.Update) {
 
 	_, err := b.AnswerCallbackQuery(ctx, &bot.AnswerCallbackQueryParams{

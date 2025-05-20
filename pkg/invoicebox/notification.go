@@ -70,10 +70,12 @@ func (h *WebhookHandler) HandleConfirmation(w http.ResponseWriter, r *http.Reque
 	fmt.Printf("Ожидали %.2f, пришло %.2f\n", task.Budget, notification.Amount)
 
 	if notification.Status == "completed" && notification.Amount == task.Budget {
+		fmt.Printf("amount match")
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte(`{"status":"success"}`))
 	} else {
 		http.Error(w, "amount mismatch or invalid status", http.StatusBadRequest)
+		fmt.Printf("amount mismatch")
 	}
 }
