@@ -153,7 +153,7 @@ type StudentSearch struct {
 	CityILike     *string
 	ScopeILike    *string
 	EmailILike    *string
-	BirthdayILike *time.Time
+	BirthdayILike *string
 }
 
 func (ss *StudentSearch) Apply(query *orm.Query) *orm.Query {
@@ -168,9 +168,6 @@ func (ss *StudentSearch) Apply(query *orm.Query) *orm.Query {
 	}
 	if ss.Name != nil {
 		ss.where(query, Tables.Student.Alias, Columns.Student.Name, ss.Name)
-	}
-	if ss.Birthday != nil {
-		ss.where(query, Tables.Student.Alias, Columns.Student.Birthday, ss.Birthday)
 	}
 	if ss.City != nil {
 		ss.where(query, Tables.Student.Alias, Columns.Student.City, ss.City)

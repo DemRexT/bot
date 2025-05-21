@@ -3,6 +3,7 @@ package app
 import (
 	"context"
 	"lotBot/pkg/invoicebox"
+	"lotBot/pkg/yougile"
 	"time"
 
 	"lotBot/pkg/db"
@@ -26,6 +27,11 @@ type Config struct {
 	Bot struct {
 		Token       string
 		AdminChatID int
+	}
+	Yougile struct {
+		Login    string
+		Password string
+		Token    string
 	}
 	InvoiceConfig invoicebox.Config
 }
@@ -56,7 +62,7 @@ func New(appName string, verbose bool, cfg Config, db db.DB, dbc *pg.DB) *App {
 	a.echo.HidePort = true
 	a.echo.IPExtractor = echo.ExtractIPFromRealIPHeader()
 
-	a.bm = botLogic.NewBotManager(a.db, a.Logger, a.cfg.Bot.AdminChatID, a.cfg.InvoiceConfig)
+	a.bm = botLogic.NewBotManager(a.db, a.Logger, a.cfg.Bot.AdminChatID, a.cfg.InvoiceConfig, yougile.Config(a.cfg.Yougile))
 
 	b, err := bot.New(cfg.Bot.Token)
 	if err != nil {
