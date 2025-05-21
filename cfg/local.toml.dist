@@ -19,3 +19,8 @@ AdminChatID = 0
 [InvoiceConfig]
 SecretKey  = ""
 MerchantID = ""
+
+[Yougile]
+Login = ""
+Password = ""
+Token = ""
