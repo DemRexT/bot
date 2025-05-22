@@ -133,7 +133,7 @@ func (bm BotManager) PayStatusHandler(ctx context.Context, b *bot.Bot, paymentSt
 	if paymentStatus == "success" {
 		_, _ = b.SendMessage(ctx, &bot.SendMessageParams{
 			ChatID: ChatID,
-			Text:   fmt.Sprintf("Оплату приняли, спасибо за сотрудничество!\nПожалуйста, оцените работу сервиса:", SurveyURL),
+			Text:   fmt.Sprintf("Оплату приняли, спасибо за сотрудничество!\nПожалуйста, оцените работу сервиса: \n%s", SurveyURL),
 		})
 	} else {
 		_, _ = b.SendMessage(ctx, &bot.SendMessageParams{
