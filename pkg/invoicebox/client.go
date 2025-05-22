@@ -80,13 +80,13 @@ func (ic *InvoiceClient) AskApi(ChatID int64) (string, error) {
 
 	jsonData, err := json.Marshal(order)
 	if err != nil {
-		fmt.Printf("JSON marshal error", err)
+		ic.Printf("JSON marshal error", err)
 		return "", err
 	}
 
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonData))
 	if err != nil {
-		fmt.Printf("Request creation error", err)
+		ic.Printf("Request creation error", err)
 		return "", err
 	}
 
@@ -98,19 +98,18 @@ func (ic *InvoiceClient) AskApi(ChatID int64) (string, error) {
 	client := &http.Client{Timeout: 10 * time.Second}
 	resp, err := client.Do(req)
 	if err != nil {
-		fmt.Printf("Request error", err)
+		ic.Printf("Request error", err)
 		return "", err
-
 	}
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		fmt.Printf("Read error", err)
+		ic.Printf("Read error", err)
 		return "", err
 	}
 
-	fmt.Printf("Response Status:\n", resp.Status)
-	fmt.Printf("'\nResponse Body:\n", string(body))
+	ic.Printf("Response Status:\n", resp.Status)
+	ic.Printf("'\nResponse Body:\n", string(body))
 
 	type CreateOrderResponse struct {
 		Data struct {
