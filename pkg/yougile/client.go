@@ -132,3 +132,38 @@ func (c *YougileClient) GetTaskByID(taskID string) ([]byte, error) {
 
 	return body, nil
 }
+
+func (c *YougileClient) MoveTaskToColumn(taskID string, columnID string) error {
+	url := fmt.Sprintf("%s/tasks/%s", baseURL, taskID)
+
+	payload := map[string]string{
+		"columnId": columnID,
+	}
+
+	data, err := json.Marshal(payload)
+	if err != nil {
+		return fmt.Errorf("ошибка сериализации тела запроса: %w", err)
+	}
+
+	req, err := http.NewRequest(http.MethodPut, url, bytes.NewBuffer(data))
+	if err != nil {
+		return fmt.Errorf("ошибка создания запроса: %w", err)
+	}
+
+	req.Header.Set("Authorization", "Bearer "+c.cfg.Token)
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return fmt.Errorf("ошибка отправки запроса: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode >= 300 {
+		body, _ := io.ReadAll(resp.Body)
+		return fmt.Errorf("ошибка от API (%s): %s", resp.Status, body)
+	}
+
+	c.Printf("Задача %s перемещена в колонку %s", taskID, columnID)
+	return nil
+}
