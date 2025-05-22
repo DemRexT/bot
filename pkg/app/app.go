@@ -7,8 +7,8 @@ import (
 	"log"
 	"lotBot/common"
 	"lotBot/pkg/invoicebox"
-	"net/http"
 	"lotBot/pkg/yougile"
+	"net/http"
 	"time"
 
 	"lotBot/pkg/db"
@@ -55,6 +55,7 @@ type App struct {
 	icWh    *invoicebox.WebhookHandler
 	PSh     common.PaymentStatusHandler
 	update  *models.Update
+	Yougile *yougile.YougileClient
 }
 
 func New(appName string, verbose bool, cfg Config, db db.DB, dbc *pg.DB) *App {
@@ -78,8 +79,6 @@ func New(appName string, verbose bool, cfg Config, db db.DB, dbc *pg.DB) *App {
 	}
 	a.b = b
 
-	a.ic = invoicebox.NewInvoiceClient(a.Logger, a.cfg.InvoiceConfig)
-	a.bm = botLogic.NewBotManager(a.db, a.Logger, a.cfg.Bot.AdminChatID, a.cfg.InvoiceConfig)
 	a.icWh = invoicebox.NewWebhookHandler(a.PSh, a.db, a.Logger)
 
 	return a
