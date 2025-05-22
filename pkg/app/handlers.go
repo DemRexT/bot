@@ -70,6 +70,7 @@ func (a *App) registerAPIHandlers() {
 	a.echo.Any(RouteSubmitBusinessForm, a.handleFormResult)
 	a.echo.Any(RouteSubmitLotForm, a.handleFormResult)
 	a.echo.Any(RouteYougile, a.handleYougileResult)
+	a.echo.Any(RouteInvoice, a.HandleConfirmation)
 
 	a.echo.Any("/v1/rpc/", zm.EchoHandler(zm.XRequestID(srv)))
 	a.echo.Any("/v1/rpc/doc/", echo.WrapHandler(http.HandlerFunc(zenrpc.SMDBoxHandler)))

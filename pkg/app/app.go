@@ -2,13 +2,9 @@ package app
 
 import (
 	"context"
-	"fmt"
 	"github.com/go-telegram/bot/models"
-	"log"
-	"lotBot/common"
 	"lotBot/pkg/invoicebox"
 	"lotBot/pkg/yougile"
-	"net/http"
 	"time"
 
 	"lotBot/pkg/db"
@@ -53,7 +49,6 @@ type App struct {
 	bot     *bot.Bot
 	ic      *invoicebox.InvoiceClient
 	icWh    *invoicebox.WebhookHandler
-	PSh     common.PaymentStatusHandler
 	update  *models.Update
 	Yougile *yougile.YougileClient
 }
@@ -79,7 +74,7 @@ func New(appName string, verbose bool, cfg Config, db db.DB, dbc *pg.DB) *App {
 	}
 	a.b = b
 
-	a.icWh = invoicebox.NewWebhookHandler(a.PSh, a.db, a.Logger)
+	a.icWh = invoicebox.NewWebhookHandler(a.db, a.Logger)
 
 	return a
 }
@@ -93,22 +88,7 @@ func (a *App) Run() error {
 	a.registerAPIHandlers()
 	go a.b.Start(context.Background())
 
-	go func() {
-		a.PSh = a
-		a.icWh = invoicebox.NewWebhookHandler(a.PSh, a.db, a.Logger)
-		http.HandleFunc("/invoicebox-webhook", a.icWh.HandleConfirmation)
-		fmt.Println("Webhook port 8080")
-		log.Fatal(http.ListenAndServe(":8080", nil))
-	}()
-
 	return a.runHTTPServer(a.cfg.Server.Host, a.cfg.Server.Port)
-}
-
-func (a *App) HandleStatus() (string, error) {
-
-	fmt.Printf("paymentStatus: %s\n", a.icWh.PaymentStatus)
-	a.bm.PayStatusHandler(context.Background(), a.b, a.icWh.PaymentStatus, a.icWh.TgChatID)
-	return a.icWh.PaymentStatus, nil
 }
 
 // Shutdown is a function that gracefully stops HTTP server.

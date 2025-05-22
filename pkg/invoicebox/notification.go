@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"lotBot/common"
 	"lotBot/pkg/embedlog"
 	"net/http"
 	"strconv"
@@ -18,14 +17,12 @@ type WebhookHandler struct {
 	repo          db.LotbotRepo
 	PaymentStatus string
 	TgChatID      int64
-	PSh           common.PaymentStatusHandler
 }
 
-func NewWebhookHandler(PSh common.PaymentStatusHandler, DB db.DB, logger embedlog.Logger) *WebhookHandler {
+func NewWebhookHandler(DB db.DB, logger embedlog.Logger) *WebhookHandler {
 	return &WebhookHandler{
 		DB: DB, Logger: logger,
 		repo: db.NewLotbotRepo(DB),
-		PSh:  PSh,
 	}
 }
 
@@ -78,7 +75,6 @@ func (h *WebhookHandler) HandleConfirmation(w http.ResponseWriter, r *http.Reque
 	}
 
 	h.TgChatID = notification.MetaData.TgChatID
-	h.PaymentStatus = "pending \n"
 
 	fmt.Printf("TgID from API (notification): %d\n", h.TgChatID)
 	fmt.Printf("Ожидали %.2f, пришло %.2f\n", task.Budget, notification.Amount)
@@ -95,7 +91,6 @@ func (h *WebhookHandler) HandleConfirmation(w http.ResponseWriter, r *http.Reque
 		h.PaymentStatus = "fail"
 	}
 
-	_, err = h.PSh.HandleStatus()
 	if err != nil {
 		return
 	}
