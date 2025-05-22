@@ -17,7 +17,8 @@ type Config struct {
 
 type InvoiceClient struct {
 	embedlog.Logger
-	cfg Config
+	cfg      Config
+	TgChatID int64
 }
 
 func NewInvoiceClient(logger embedlog.Logger, cfg Config) *InvoiceClient {
@@ -26,7 +27,7 @@ func NewInvoiceClient(logger embedlog.Logger, cfg Config) *InvoiceClient {
 
 const url = "https://api.invoicebox.ru/l3/billing/api/order/order"
 
-func (ic *InvoiceClient) AskApi() (string, error) {
+func (ic *InvoiceClient) AskApi(ChatID int64) (string, error) {
 	type BasketItem struct {
 		SKU         string  `json:"sku"`
 		Name        string  `json:"name"`
@@ -38,32 +39,42 @@ func (ic *InvoiceClient) AskApi() (string, error) {
 		PaymentType string  `json:"paymentType"`
 	}
 
+	type MetaData struct {
+		TgChatID int64 `json:"chatId"`
+	}
+
 	type CreateOrderRequest struct {
+		Description     string       `json:"description"`
 		MerchantID      string       `json:"merchantId"`
 		MerchantOrderID string       `json:"merchantOrderId"`
 		Amount          float64      `json:"amount"`
 		CurrencyID      string       `json:"currencyId"`
 		VatAmount       float64      `json:"vatAmount"`
 		BasketItems     []BasketItem `json:"basketItems"`
+		Metadata        MetaData     `json:"metaData"`
 	}
 
 	order := CreateOrderRequest{
+		Description:     "Оплата услуг по оформлению бизнес-аккаунтов (Яндекс Бизнес, 2Гис)",
 		MerchantID:      ic.cfg.MerchantID,
 		MerchantOrderID: "1",
-		Amount:          1.00,
+		Amount:          3000.00,
 		CurrencyID:      "RUB",
-		VatAmount:       16.67,
+
 		BasketItems: []BasketItem{
 			{
 				SKU:         "sku123",
-				Name:        "Тест услуга",
+				Name:        "Оформление бизнес-аккаунтов",
 				Measure:     "шт.",
 				Quantity:    1,
-				Amount:      1.00,
+				Amount:      3000.00,
 				VatCode:     "RUS_VAT20",
 				Type:        "service",
 				PaymentType: "full_prepayment",
 			},
+		},
+		Metadata: MetaData{
+			TgChatID: ChatID,
 		},
 	}
 
@@ -98,12 +109,15 @@ func (ic *InvoiceClient) AskApi() (string, error) {
 		return "", err
 	}
 
-	fmt.Printf("Response Status:", resp.Status)
-	fmt.Printf("Response Body:", string(body))
+	fmt.Printf("Response Status:\n", resp.Status)
+	fmt.Printf("'\nResponse Body:\n", string(body))
 
 	type CreateOrderResponse struct {
 		Data struct {
 			PaymentUrl string `json:"paymentUrl"`
+			MetaData   struct {
+				TgChatID int64 `json:"chatId"`
+			} `json:"metaData"`
 		} `json:"data"`
 	}
 
@@ -112,7 +126,9 @@ func (ic *InvoiceClient) AskApi() (string, error) {
 		return "", fmt.Errorf("unmarshal error: %w", err)
 	}
 
-	fmt.Println("paymentUrl from API:", orderResp.Data.PaymentUrl)
+	ic.TgChatID = orderResp.Data.MetaData.TgChatID
+	fmt.Println("Meta from API (client):", ic.TgChatID)
+	fmt.Println("paymentUrl from API:\n", orderResp.Data.PaymentUrl)
 
 	if orderResp.Data.PaymentUrl == "" {
 		return "", fmt.Errorf("paymentUrl not found in response")

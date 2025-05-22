@@ -21,6 +21,7 @@ type BotManager struct {
 	adminChatID int
 	ic          *invoicebox.InvoiceClient
 	repo        db.LotbotRepo
+	icWh        *invoicebox.WebhookHandler
 	Yougile     *yougile.YougileClient
 }
 
@@ -145,23 +146,48 @@ func (bm BotManager) StartHandler(ctx context.Context, b *bot.Bot, update *model
 }
 
 func (bm BotManager) PayHandler(ctx context.Context, b *bot.Bot, update *models.Update) {
-	chatID := update.Message.Chat.ID
-
-	redirectURL, err := bm.ic.AskApi()
+	ChatID := update.Message.Chat.ID
+	redirectURL, err := bm.ic.AskApi(ChatID)
 	if err != nil {
 		bm.Errorf("Ошибка при вызове InvoiceBox API: %v", err)
 		_, _ = b.SendMessage(ctx, &bot.SendMessageParams{
-			ChatID: chatID,
+			ChatID: ChatID,
 			Text:   "Произошла ошибка при создании счёта. Попробуйте позже.",
 		})
 		return
 	}
 
 	_, _ = b.SendMessage(ctx, &bot.SendMessageParams{
-		ChatID: chatID,
+		ChatID: ChatID,
 		Text:   fmt.Sprintf("Счёт успешно создан! Перейдите по ссылке для оплаты:\n%s", redirectURL),
 	})
 }
+
+func (bm BotManager) PayStatusHandler(ctx context.Context, b *bot.Bot, paymentStatus string, TgChatID int64) {
+	ChatID := TgChatID
+	//Временно:
+	SurveyURL := "https://workspace.google.com/intl/ru/products/forms/"
+	//SurveyURL, err := survey.handler
+	fmt.Printf("TGID (handler): %d\n", ChatID)
+
+	if paymentStatus == "success" {
+		_, _ = b.SendMessage(ctx, &bot.SendMessageParams{
+			ChatID: ChatID,
+			Text:   fmt.Sprintf("Оплату приняли, спасибо за сотрудничество!\nПожалуйста, оцените работу сервиса: \n%s", SurveyURL),
+		})
+	} else {
+		_, _ = b.SendMessage(ctx, &bot.SendMessageParams{
+			ChatID: ChatID,
+			Text:   "Оплата не прошла. Попробуйте снова или обратитесь в поддержку.",
+		})
+	}
+}
+
+/*func (bm BotManager) SurveyHandler(ctx context.Context, b *bot.Bot, TgChatID int64){
+
+}
+*/
+
 func (bm BotManager) CallbackHandler(ctx context.Context, b *bot.Bot, update *models.Update) {
 
 	_, err := b.AnswerCallbackQuery(ctx, &bot.AnswerCallbackQueryParams{

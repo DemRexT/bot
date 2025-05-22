@@ -2,6 +2,7 @@ package app
 
 import (
 	"context"
+	"github.com/go-telegram/bot/models"
 	"lotBot/pkg/invoicebox"
 	"lotBot/pkg/yougile"
 	"time"
@@ -47,6 +48,9 @@ type App struct {
 	bm      *botLogic.BotManager
 	bot     *bot.Bot
 	ic      *invoicebox.InvoiceClient
+	icWh    *invoicebox.WebhookHandler
+	update  *models.Update
+	Yougile *yougile.YougileClient
 }
 
 func New(appName string, verbose bool, cfg Config, db db.DB, dbc *pg.DB) *App {
@@ -70,7 +74,7 @@ func New(appName string, verbose bool, cfg Config, db db.DB, dbc *pg.DB) *App {
 	}
 	a.b = b
 
-	a.ic = invoicebox.NewInvoiceClient(a.Logger, a.cfg.InvoiceConfig)
+	a.icWh = invoicebox.NewWebhookHandler(a.db, a.Logger)
 
 	return a
 }
@@ -83,11 +87,6 @@ func (a *App) Run() error {
 	a.registerDebugHandlers()
 	a.registerAPIHandlers()
 	go a.b.Start(context.Background())
-
-	_, err := a.ic.AskApi()
-	if err != nil {
-		return err
-	}
 
 	return a.runHTTPServer(a.cfg.Server.Host, a.cfg.Server.Port)
 }
