@@ -55,3 +55,41 @@ Content-Type: application/json
   },
   "fromUserId": "974996c7-0c98-494f-90c0-a246f449ab16"
 }
+
+### Отправка данных о перестановке задачи в блок "В работе"
+POST localhost:8075/yougile
+Content-Type: application/json
+
+
+{
+  "event": "task-moved",
+  "payload": {
+    "title": "название",
+    "timestamp": 1747869679889,
+    "columnId": "ab3e05ea-9092-478f-a4f6-e88b204c8408",
+    "description": "описание",
+    "archived": false,
+    "completed": false,
+    "assigned": [
+      "974996c7-0c98-494f-90c0-a246f449ab16"
+    ],
+    "createdBy": "974996c7-0c98-494f-90c0-a246f449ab16",
+    "id": "a4e3ba73-fd70-4fa2-87b9-28089f4d0c71",
+    "parents": []
+  },
+  "prevData": {
+    "title": "название",
+    "timestamp": 1747869679889,
+    "columnId": "5bfcc202-886a-4457-b037-15f8d5604558",
+    "description": "описание",
+    "archived": false,
+    "completed": false,
+    "assigned": [
+      "974996c7-0c98-494f-90c0-a246f449ab16"
+    ],
+    "createdBy": "974996c7-0c98-494f-90c0-a246f449ab16",
+    "id": "a4e3ba73-fd70-4fa2-87b9-28089f4d0c71",
+    "parents": []
+  },
+  "fromUserId": "974996c7-0c98-494f-90c0-a246f449ab16"
+}
