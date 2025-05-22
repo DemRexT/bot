@@ -1,0 +1,57 @@
+### Отправка данных о изменение задачи
+POST localhost:8075/yougile
+Content-Type: application/json
+
+{
+  "event": "task-updated",
+  "payload": {
+    "title": "название",
+    "timestamp": 1747780323922,
+    "columnId": "5bfcc202-886a-4457-b037-15f8d5604558",
+    "description": "описание",
+    "archived": false,
+    "completed": false,
+    "subtasks": [],
+    "assigned": [
+      "ec4af5f1-f0c4-411e-a377-05fe104f7359"
+    ],
+    "createdBy": "974996c7-0c98-494f-90c0-a246f449ab16",
+    "checklists": [
+      {
+        "title": "Список",
+        "items": [
+          {
+            "isCompleted": false,
+            "title": "созвон"
+          }
+        ]
+      }
+    ],
+    "id": "986bd0fb-b435-43ab-9547-94280e7c097c",
+    "parents": []
+  },
+  "prevData": {
+    "title": "название",
+    "timestamp": 1747780323922,
+    "columnId": "5bfcc202-886a-4457-b037-15f8d5604558",
+    "description": "описание",
+    "archived": false,
+    "completed": false,
+    "subtasks": [],
+    "createdBy": "974996c7-0c98-494f-90c0-a246f449ab16",
+    "checklists": [
+      {
+        "title": "Список",
+        "items": [
+          {
+            "isCompleted": false,
+            "title": "созвон"
+          }
+        ]
+      }
+    ],
+    "id": "986bd0fb-b435-43ab-9547-94280e7c097c",
+    "parents": []
+  },
+  "fromUserId": "974996c7-0c98-494f-90c0-a246f449ab16"
+}

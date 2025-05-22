@@ -34,7 +34,7 @@ Content-Type: application/json
   "tgId": "1098511932",
   "nameTask": "название",
   "description": "описание",
-  "budget": "бюджет",
+  "budget": "123123",
   "direction": "Подготовка презентаций",
   "Link": "",
   "deadline": "12.04.2025",

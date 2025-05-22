@@ -10,6 +10,7 @@ import (
 	"lotBot/pkg/db"
 	"lotBot/pkg/embedlog"
 	"lotBot/pkg/invoicebox"
+	"lotBot/pkg/yougile"
 	"strconv"
 	"strings"
 	"time"
@@ -21,14 +22,16 @@ type BotManager struct {
 	ic          *invoicebox.InvoiceClient
 	repo        db.LotbotRepo
 	icWh        *invoicebox.WebhookHandler
+	Yougile     *yougile.YougileClient
 }
 
-func NewBotManager(DB db.DB, logger embedlog.Logger, adminChatID int, cfg invoicebox.Config) *BotManager {
+func NewBotManager(DB db.DB, logger embedlog.Logger, adminChatID int, cfg invoicebox.Config, ygCfg yougile.Config) *BotManager {
 	return &BotManager{
 		Logger:      logger,
 		adminChatID: adminChatID,
 		ic:          invoicebox.NewInvoiceClient(logger, cfg),
 		repo:        db.NewLotbotRepo(DB),
+		Yougile:     yougile.NewYougileClient(logger, ygCfg),
 	}
 }
 
@@ -50,6 +53,7 @@ const (
 	UrlRegisterBusiness               = "https://docs.google.com/forms/d/e/1FAIpQLSdz5iYc9UB6M3wOOrGGl-4jTywltlkl7AZgqXrNKIBqrY87mA/viewform?usp=pp_url&entry.213949143="
 	UrlCreateTask                     = "https://docs.google.com/forms/d/e/1FAIpQLScQgB6T74K87rZHi8a9qi-l565V3rrO5sKUlHe9LStZiRM3YA/viewform?usp=pp_url&entry.995903952="
 	UrlTelegrammChat                  = "https://web.telegram.org/a/#"
+	UrlTask                           = "https://ru.yougile.com/team/005706c078bc/#"
 )
 
 func (bm BotManager) PrivateOnly(handler bot.HandlerFunc) bot.HandlerFunc {
@@ -277,12 +281,6 @@ func (bm BotManager) ModerationStudent(ctx context.Context, b *bot.Bot, update *
 
 	userID := data.Tgid
 
-	parsedBirthday, err := time.Parse("02.01.2006", data.Birthday) // формат должен соответствовать строке
-	if err != nil {
-		bm.Errorf("Ошибка парсинга даты: %v", err)
-		return
-	}
-
 	tgid, err := strconv.ParseInt(data.Tgid, 10, 64)
 	if err != nil {
 		bm.Errorf("Ошибка парсинга TgID: %v", err)
@@ -294,7 +292,7 @@ func (bm BotManager) ModerationStudent(ctx context.Context, b *bot.Bot, update *
 	student := &db.Student{
 		TgID:     tgid,
 		Name:     data.Name,
-		Birthday: parsedBirthday,
+		Birthday: data.Birthday,
 		City:     data.City,
 		Scope:    joinedSkill,
 		Email:    data.Email,
@@ -379,24 +377,12 @@ func (bm BotManager) ModerationBusines(ctx context.Context, b *bot.Bot, update *
 		return
 	}
 
-	inn, err := strconv.Atoi(data.INN)
-	if err != nil {
-		bm.Errorf("Ошибка преобразования INN: %v", err)
-		return
-	}
-
-	phone, err := strconv.Atoi(data.ContactPersonPhone)
-	if err != nil {
-		bm.Errorf("Ошибка преобразования телефона: %v", err)
-		return
-	}
-
 	company := &db.Company{
 		Name:     data.CompanyName,
 		TgID:     tgid,
-		Inn:      inn,
+		Inn:      data.INN,
 		Scope:    data.FieldOfActivity,
-		Phone:    phone,
+		Phone:    data.ContactPersonPhone,
 		StatusID: 2,
 	}
 
@@ -654,26 +640,101 @@ func (bm BotManager) ModerationResponse(ctx context.Context, b *bot.Bot, update 
 }
 
 func (bm BotManager) ViewTasks(ctx context.Context, b *bot.Bot, update *models.Update) {
-	_, err := b.AnswerCallbackQuery(ctx, &bot.AnswerCallbackQueryParams{
-		CallbackQueryID: update.CallbackQuery.ID,
-		ShowAlert:       false,
-	})
-	if err != nil {
-		bm.Errorf("%v", err)
+
+	var data TaskPurpose
+	if err := json.Unmarshal([]byte(update.CallbackQuery.Data), &data); err != nil {
+		bm.Errorf("Ошибка парсинга JSON: %v\nДанные: %s", err, update.CallbackQuery.Data)
 		return
 	}
+
+	response, err := bm.Yougile.GetUserByID(data.Payload.Assigned[0])
+	if err != nil {
+		bm.Errorf("%v", err)
+	}
+
+	tasks, err := bm.Yougile.GetTaskByID(data.Payload.Id)
+	if err != nil {
+		bm.Errorf("%v", err)
+	}
+
+	yougileID := &data.Payload.Id
+
+	search := &db.TaskSearch{
+		YougileID: yougileID,
+	}
+	pager := db.Pager{Page: 1, PageSize: 1}
+
+	tasksDB, err := bm.repo.TasksByFilters(ctx, search, pager)
+	if err != nil {
+		bm.Errorf("ошибка при поиске задачи по YougileID: %v", err)
+		return
+	}
+	if len(tasksDB) == 0 {
+		bm.Errorf("Задача с YougileID=[%s] не найдена", *yougileID)
+		return
+	}
+
+	taskdb := tasksDB[0]
+
 	kb := &models.InlineKeyboardMarkup{
 		InlineKeyboard: [][]models.InlineKeyboardButton{
 			{
-				{Text: "Готов", CallbackData: PatternReady + "yes"},
-				{Text: "Не готов", CallbackData: PatternReady + "not"},
+				{Text: "Готов", CallbackData: PatternReady + "yes_" + strconv.Itoa(taskdb.ID)},
+				{Text: "Не готов", CallbackData: PatternReady + "not_" + strconv.Itoa(taskdb.ID)},
 			},
 		},
 	}
 
-	_, err = b.EditMessageText(ctx, &bot.EditMessageTextParams{
-		ChatID:      update.CallbackQuery.Message.Message.Chat.ID,
-		MessageID:   update.CallbackQuery.Message.Message.ID,
+	var task ResponceTask
+	if err := json.Unmarshal(tasks, &task); err != nil {
+		bm.Errorf("Ошибка при разборе JSON: %v", err)
+		return
+	}
+
+	var user ResponceUser
+	if err := json.Unmarshal(response, &user); err != nil {
+		bm.Errorf("Ошибка при разборе JSON: %v", err)
+		return
+	}
+
+	searchStudent := &db.StudentSearch{
+		Email: &user.Email,
+	}
+	pagerStudent := db.Pager{Page: 1, PageSize: 1}
+
+	students, err := bm.repo.StudentsByFilters(ctx, searchStudent, pagerStudent)
+	if err != nil {
+		bm.Errorf("ошибка поиска студента по email: %v", err)
+		return
+	}
+	kbAdmin := &models.InlineKeyboardMarkup{
+		InlineKeyboard: [][]models.InlineKeyboardButton{
+			{
+				{
+					Text: "Ссылка на задачу",
+					URL:  UrlTask + task.IdTaskProject,
+				},
+			},
+		},
+	}
+
+	if len(students) == 0 {
+		bm.Errorf("Студент с таким email не найден")
+		_, err := b.SendMessage(ctx, &bot.SendMessageParams{
+			ChatID:      bm.adminChatID,
+			Text:        "Пользователь с таким email не найден",
+			ReplyMarkup: kbAdmin,
+		})
+		if err != nil {
+			bm.Errorf("%v", err)
+		}
+		return
+	}
+
+	student := students[0]
+
+	_, err = b.SendMessage(ctx, &bot.SendMessageParams{
+		ChatID:      student.TgID,
 		Text:        NewTask,
 		ReplyMarkup: kb,
 	})
@@ -692,10 +753,17 @@ func (bm BotManager) StudentReadiness(ctx context.Context, b *bot.Bot, update *m
 		bm.Errorf("%v", err)
 	}
 
+	parts := strings.Split(update.CallbackQuery.Data, "_")
+
+	if len(parts) < 3 {
+		bm.Errorf("не удалось отобразить карточку пользователя, len(parts) < 3\n")
+		return
+	}
+
 	var response string
 	var kb *models.InlineKeyboardMarkup
-	switch update.CallbackQuery.Data {
-	case PatternReady + "yes":
+	switch parts[1] {
+	case "yes":
 		response = "Отлично!\nДавай назначим созвон с заказчиком длявыяснения деталей,затем ты сможеш приступить"
 		kb = &models.InlineKeyboardMarkup{
 			InlineKeyboard: [][]models.InlineKeyboardButton{
@@ -704,7 +772,63 @@ func (bm BotManager) StudentReadiness(ctx context.Context, b *bot.Bot, update *m
 				},
 			},
 		}
-	case PatternReady + "not":
+		tgid := update.CallbackQuery.From.ID
+
+		search := &db.StudentSearch{
+			TgID: &tgid,
+		}
+		pager := db.Pager{Page: 1, PageSize: 1}
+
+		students, err := bm.repo.StudentsByFilters(ctx, search, pager)
+		if err != nil {
+			bm.Errorf("ошибка поиска студента: %v", err)
+			return
+		}
+		if len(students) == 0 {
+			bm.Printf("Студент не найден")
+			return
+		}
+
+		student := students[0]
+
+		taskID, err := strconv.Atoi(parts[2])
+		if err != nil {
+			bm.Errorf("Ошибка парсинга taskID: %v", err)
+			return
+		}
+
+		task, err := bm.repo.TaskByID(ctx, taskID)
+		if err != nil {
+			return
+		}
+
+		task.StudentID = &student.ID
+
+		ok, err := bm.repo.UpdateTask(ctx, task, db.WithColumns("studentId"))
+		if err != nil {
+			bm.Errorf("ошибка обновления студента: %v", err)
+			return
+		}
+		if ok {
+			bm.Printf("Статус студента успешно обновлён")
+		} else {
+			bm.Printf("Обновление не затронуло ни одной строки")
+		}
+
+		student.StatusID = 2
+
+		ok, err = bm.repo.UpdateStudent(ctx, &student, db.WithColumns("statusId"))
+		if err != nil {
+			bm.Errorf("ошибка обновления студента: %v", err)
+			return
+		}
+		if ok {
+			bm.Printf("Статус студента успешно обновлён")
+		} else {
+			bm.Printf("Обновление не затронуло ни одной строки")
+		}
+
+	case "not":
 		response = "Подскажи, почему именно:"
 		kb = &models.InlineKeyboardMarkup{
 			InlineKeyboard: [][]models.InlineKeyboardButton{
@@ -781,6 +905,10 @@ func (bm BotManager) NotReady(ctx context.Context, b *bot.Bot, update *models.Up
 	}
 
 	parts := strings.Split(update.CallbackQuery.Data, "_")
+	if len(parts) < 2 {
+		bm.Errorf("не удалось отобразить карточку пользователя, len(parts) < 2\n")
+		return
+	}
 
 	if len(parts) < 2 {
 		bm.Errorf("не удалось отобразить карточку пользователя, len(parts) < 2\n")
@@ -904,6 +1032,20 @@ func (bm BotManager) ModerationTask(ctx context.Context, b *bot.Bot, update *mod
 		return
 	}
 
+	payload := yougile.TaskPayload{
+		Title:       data.NameTask,
+		ColumnID:    "5bfcc202-886a-4457-b037-15f8d5604558",
+		Description: data.Description,
+		Archived:    false,
+		Completed:   false,
+	}
+
+	taskID, err := bm.Yougile.CreateTask(payload)
+	if err != nil {
+		bm.Errorf("Ошибка создания задачи: %v", err)
+	}
+	bm.Printf("Создана задача с ID: %s\n", taskID)
+
 	tgid, err := strconv.ParseInt(data.TgId, 10, 64)
 	if err != nil {
 		bm.Errorf("Ошибка парсинга TgID: %v", err)
@@ -942,9 +1084,10 @@ func (bm BotManager) ModerationTask(ctx context.Context, b *bot.Bot, update *mod
 		Link:        data.Link,
 		Deadline:    parsedDeadline,
 		ContactSlot: data.SlotCall,
-		StatusID:    0,
+		StatusID:    1,
 		StudentID:   nil,
 		Budget:      budget,
+		YougileID:   &taskID,
 	}
 
 	_, err = bm.repo.AddTask(ctx, task)
