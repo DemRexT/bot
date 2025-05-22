@@ -168,18 +168,24 @@ func (bm BotManager) PayStatusHandler(ctx context.Context, b *bot.Bot, paymentSt
 	//Временно:
 	SurveyURL := "https://workspace.google.com/intl/ru/products/forms/"
 	//SurveyURL, err := survey.handler
-	fmt.Printf("TGID (handler): %d\n", ChatID)
+	bm.Printf("TGID (handler): %d\n", ChatID)
 
 	if paymentStatus == "success" {
-		_, _ = b.SendMessage(ctx, &bot.SendMessageParams{
+		_, err := b.SendMessage(ctx, &bot.SendMessageParams{
 			ChatID: ChatID,
 			Text:   fmt.Sprintf("Оплату приняли, спасибо за сотрудничество!\nПожалуйста, оцените работу сервиса: \n%s", SurveyURL),
 		})
+		if err != nil {
+			bm.Errorf("%v", err)
+		}
 	} else {
-		_, _ = b.SendMessage(ctx, &bot.SendMessageParams{
+		_, err := b.SendMessage(ctx, &bot.SendMessageParams{
 			ChatID: ChatID,
 			Text:   "Оплата не прошла. Попробуйте снова или обратитесь в поддержку.",
 		})
+		if err != nil {
+			bm.Errorf("%v", err)
+		}
 	}
 }
 

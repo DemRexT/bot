@@ -2,7 +2,6 @@ package invoicebox
 
 import (
 	"encoding/json"
-	"fmt"
 	"io"
 	"lotBot/pkg/embedlog"
 	"net/http"
@@ -56,9 +55,9 @@ func (h *WebhookHandler) HandleConfirmation(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	fmt.Printf("Получен вебхук от InvoiceBox:")
-	fmt.Printf("%+v\n", notification)
-	fmt.Printf("'\nResponse Body:\n", string(body))
+	h.Printf("Получен вебхук от InvoiceBox:")
+	h.Printf("%+v\n", notification)
+	h.Printf("'\nResponse Body:\n", string(body))
 
 	taskID, err := strconv.Atoi(notification.ID)
 	if err != nil {
@@ -74,18 +73,18 @@ func (h *WebhookHandler) HandleConfirmation(w http.ResponseWriter, r *http.Reque
 
 	chatId = notification.MetaData.TgChatID
 
-	fmt.Printf("TgID from API (notification): %d\n", chatId)
-	fmt.Printf("Ожидали %.2f, пришло %.2f\n", task.Budget, notification.Amount)
+	h.Printf("TgID from API (notification): %d\n", chatId)
+	h.Printf("Ожидали %.2f, пришло %.2f\n", task.Budget, notification.Amount)
 
 	if notification.Status == "completed" && notification.Amount == task.Budget {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte(`{"status":"success"}`))
-		fmt.Printf("amount match \n")
+		h.Printf("amount match \n")
 		paymentStatus = "success"
 	} else {
 		http.Error(w, "amount mismatch or invalid status", http.StatusBadRequest)
-		fmt.Printf("amount mismatch \n")
+		h.Printf("amount mismatch \n")
 		paymentStatus = "fail"
 	}
 
