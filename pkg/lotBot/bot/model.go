@@ -103,3 +103,32 @@ type ResponceTask struct {
 	IdTaskProject string `json:"idTaskProject"`
 	Id            string `json:"id"`
 }
+
+type TaskMoved struct {
+	Event   string `json:"event"`
+	Payload struct {
+		Title       string        `json:"title"`
+		Timestamp   int64         `json:"timestamp"`
+		ColumnId    string        `json:"columnId"`
+		Description string        `json:"description"`
+		Archived    bool          `json:"archived"`
+		Completed   bool          `json:"completed"`
+		Assigned    []string      `json:"assigned"`
+		CreatedBy   string        `json:"createdBy"`
+		Id          string        `json:"id"`
+		Parents     []interface{} `json:"parents"`
+	} `json:"payload"`
+	PrevData struct {
+		Title       string        `json:"title"`
+		Timestamp   int64         `json:"timestamp"`
+		ColumnId    string        `json:"columnId"`
+		Description string        `json:"description"`
+		Archived    bool          `json:"archived"`
+		Completed   bool          `json:"completed"`
+		Assigned    []string      `json:"assigned"`
+		CreatedBy   string        `json:"createdBy"`
+		Id          string        `json:"id"`
+		Parents     []interface{} `json:"parents"`
+	} `json:"prevData"`
+	FromUserId string `json:"fromUserId"`
+}

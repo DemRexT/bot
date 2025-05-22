@@ -39,6 +39,8 @@ func (a *App) handleYougileResult(c echo.Context) error {
 	switch payload.Event {
 	case "task-updated":
 		a.bm.ViewTasks(c.Request().Context(), a.b, update)
+	case "task-moved":
+		a.bm.VerificationTask(c.Request().Context(), a.b, update)
 	}
 
 	return c.JSON(http.StatusOK, map[string]string{"status": "Данные переданы на модерацию"})
