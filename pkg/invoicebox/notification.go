@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"lotBot/common"
 	"lotBot/pkg/embedlog"
 	"net/http"
 	"strconv"
@@ -14,13 +15,17 @@ import (
 type WebhookHandler struct {
 	DB db.DB
 	embedlog.Logger
-	repo db.LotbotRepo
+	repo          db.LotbotRepo
+	PaymentStatus string
+	TgChatID      int64
+	PSh           common.PaymentStatusHandler
 }
 
-func NewWebhookHandler(DB db.DB, logger embedlog.Logger) *WebhookHandler {
+func NewWebhookHandler(PSh common.PaymentStatusHandler, DB db.DB, logger embedlog.Logger) *WebhookHandler {
 	return &WebhookHandler{
 		DB: DB, Logger: logger,
 		repo: db.NewLotbotRepo(DB),
+		PSh:  PSh,
 	}
 }
 
@@ -30,6 +35,10 @@ type InvoiceNotification struct {
 	Amount     float64 `json:"amount"`
 	Status     string  `json:"status"`
 	CurrencyID string  `json:"currencyId"`
+
+	MetaData struct {
+		TgChatID int64 `json:"chatId"`
+	} `json:"metaData"`
 }
 
 func (h *WebhookHandler) HandleConfirmation(w http.ResponseWriter, r *http.Request) {
@@ -54,6 +63,7 @@ func (h *WebhookHandler) HandleConfirmation(w http.ResponseWriter, r *http.Reque
 
 	fmt.Printf("Получен вебхук от InvoiceBox:")
 	fmt.Printf("%+v\n", notification)
+	fmt.Printf("'\nResponse Body:\n", string(body))
 
 	taskID, err := strconv.Atoi(notification.ID)
 	if err != nil {
@@ -67,15 +77,26 @@ func (h *WebhookHandler) HandleConfirmation(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
+	h.TgChatID = notification.MetaData.TgChatID
+	h.PaymentStatus = "pending \n"
+
+	fmt.Printf("TgID from API (notification): %d\n", h.TgChatID)
 	fmt.Printf("Ожидали %.2f, пришло %.2f\n", task.Budget, notification.Amount)
 
 	if notification.Status == "completed" && notification.Amount == task.Budget {
-		fmt.Printf("amount match")
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte(`{"status":"success"}`))
+		fmt.Printf("amount match \n")
+		h.PaymentStatus = "success"
 	} else {
 		http.Error(w, "amount mismatch or invalid status", http.StatusBadRequest)
-		fmt.Printf("amount mismatch")
+		fmt.Printf("amount mismatch \n")
+		h.PaymentStatus = "fail"
+	}
+
+	_, err = h.PSh.HandleStatus()
+	if err != nil {
+		return
 	}
 }

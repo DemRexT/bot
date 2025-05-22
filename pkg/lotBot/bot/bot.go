@@ -106,35 +106,47 @@ func (bm BotManager) StartHandler(ctx context.Context, b *bot.Bot, update *model
 }
 
 func (bm BotManager) PayHandler(ctx context.Context, b *bot.Bot, update *models.Update) {
-	chatID := update.Message.Chat.ID
-
-	redirectURL, err := bm.ic.AskApi()
+	ChatID := update.Message.Chat.ID
+	redirectURL, err := bm.ic.AskApi(ChatID)
 	if err != nil {
 		bm.Errorf("Ошибка при вызове InvoiceBox API: %v", err)
 		_, _ = b.SendMessage(ctx, &bot.SendMessageParams{
-			ChatID: chatID,
+			ChatID: ChatID,
 			Text:   "Произошла ошибка при создании счёта. Попробуйте позже.",
 		})
 		return
 	}
 
 	_, _ = b.SendMessage(ctx, &bot.SendMessageParams{
-		ChatID: chatID,
+		ChatID: ChatID,
 		Text:   fmt.Sprintf("Счёт успешно создан! Перейдите по ссылке для оплаты:\n%s", redirectURL),
 	})
 }
 
-func (bm BotManager) UpdateTaskPaymentStatus(status string, chatID int64, ctx context.Context, b *bot.Bot, update *models.Update) {
-	text := "❌ Оплата не удалась"
-	if status == "success" {
-		text = "✅ Оплата прошла успешно!"
-	}
+func (bm BotManager) PayStatusHandler(ctx context.Context, b *bot.Bot, paymentStatus string, TgChatID int64) {
+	ChatID := TgChatID
+	//Временно:
+	SurveyURL := "https://workspace.google.com/intl/ru/products/forms/"
+	//SurveyURL, err := survey.handler
+	fmt.Printf("TGID (handler): %d\n", ChatID)
 
-	_, _ = b.SendMessage(context.Background(), &bot.SendMessageParams{
-		ChatID: chatID,
-		Text:   text,
-	})
+	if paymentStatus == "success" {
+		_, _ = b.SendMessage(ctx, &bot.SendMessageParams{
+			ChatID: ChatID,
+			Text:   fmt.Sprintf("Оплату приняли, спасибо за сотрудничество!\nПожалуйста, оцените работу сервиса:", SurveyURL),
+		})
+	} else {
+		_, _ = b.SendMessage(ctx, &bot.SendMessageParams{
+			ChatID: ChatID,
+			Text:   "Оплата не прошла. Попробуйте снова или обратитесь в поддержку.",
+		})
+	}
 }
+
+/*func (bm BotManager) SurveyHandler(ctx context.Context, b *bot.Bot, TgChatID int64){
+
+}
+*/
 
 func (bm BotManager) CallbackHandler(ctx context.Context, b *bot.Bot, update *models.Update) {
 
