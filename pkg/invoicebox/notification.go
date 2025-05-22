@@ -14,9 +14,7 @@ import (
 type WebhookHandler struct {
 	DB db.DB
 	embedlog.Logger
-	repo          db.LotbotRepo
-	PaymentStatus string
-	TgChatID      int64
+	repo db.LotbotRepo
 }
 
 func NewWebhookHandler(DB db.DB, logger embedlog.Logger) *WebhookHandler {
@@ -38,7 +36,7 @@ type InvoiceNotification struct {
 	} `json:"metaData"`
 }
 
-func (h *WebhookHandler) HandleConfirmation(w http.ResponseWriter, r *http.Request) {
+func (h *WebhookHandler) HandleConfirmation(w http.ResponseWriter, r *http.Request) (paymentStatus string, chatId int64) {
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
 		http.Error(w, "can't read body", http.StatusBadRequest)
@@ -74,9 +72,9 @@ func (h *WebhookHandler) HandleConfirmation(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	h.TgChatID = notification.MetaData.TgChatID
+	chatId = notification.MetaData.TgChatID
 
-	fmt.Printf("TgID from API (notification): %d\n", h.TgChatID)
+	fmt.Printf("TgID from API (notification): %d\n", chatId)
 	fmt.Printf("Ожидали %.2f, пришло %.2f\n", task.Budget, notification.Amount)
 
 	if notification.Status == "completed" && notification.Amount == task.Budget {
@@ -84,14 +82,16 @@ func (h *WebhookHandler) HandleConfirmation(w http.ResponseWriter, r *http.Reque
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte(`{"status":"success"}`))
 		fmt.Printf("amount match \n")
-		h.PaymentStatus = "success"
+		paymentStatus = "success"
 	} else {
 		http.Error(w, "amount mismatch or invalid status", http.StatusBadRequest)
 		fmt.Printf("amount mismatch \n")
-		h.PaymentStatus = "fail"
+		paymentStatus = "fail"
 	}
 
 	if err != nil {
 		return
 	}
+
+	return
 }
