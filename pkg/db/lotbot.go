@@ -25,8 +25,8 @@ func NewLotbotRepo(db orm.DB) LotbotRepo {
 			Tables.Task.Name:    {StatusFilter},
 		},
 		sort: map[string][]SortField{
-			Tables.Company.Name: {{Column: Columns.Company.ID, Direction: SortDesc}},
-			Tables.Student.Name: {{Column: Columns.Student.ID, Direction: SortDesc}},
+			Tables.Company.Name: {{Column: Columns.Company.CreatedAt, Direction: SortDesc}},
+			Tables.Student.Name: {{Column: Columns.Student.CreatedAt, Direction: SortDesc}},
 			Tables.Task.Name:    {{Column: Columns.Task.CreatedAt, Direction: SortDesc}},
 		},
 		join: map[string][]string{
@@ -101,6 +101,9 @@ func (lr LotbotRepo) CountCompanies(ctx context.Context, search *CompanySearch, 
 // AddCompany adds Company to DB.
 func (lr LotbotRepo) AddCompany(ctx context.Context, company *Company, ops ...OpFunc) (*Company, error) {
 	q := lr.db.ModelContext(ctx, company)
+	if len(ops) == 0 {
+		q = q.ExcludeColumn(Columns.Company.CreatedAt)
+	}
 	applyOps(q, ops...)
 	_, err := q.Insert()
 
@@ -111,7 +114,7 @@ func (lr LotbotRepo) AddCompany(ctx context.Context, company *Company, ops ...Op
 func (lr LotbotRepo) UpdateCompany(ctx context.Context, company *Company, ops ...OpFunc) (bool, error) {
 	q := lr.db.ModelContext(ctx, company).WherePK()
 	if len(ops) == 0 {
-		q = q.ExcludeColumn(Columns.Company.ID)
+		q = q.ExcludeColumn(Columns.Company.ID, Columns.Company.CreatedAt)
 	}
 	applyOps(q, ops...)
 	res, err := q.Update()
@@ -174,6 +177,9 @@ func (lr LotbotRepo) CountStudents(ctx context.Context, search *StudentSearch, o
 // AddStudent adds Student to DB.
 func (lr LotbotRepo) AddStudent(ctx context.Context, student *Student, ops ...OpFunc) (*Student, error) {
 	q := lr.db.ModelContext(ctx, student)
+	if len(ops) == 0 {
+		q = q.ExcludeColumn(Columns.Student.CreatedAt)
+	}
 	applyOps(q, ops...)
 	_, err := q.Insert()
 
@@ -184,7 +190,7 @@ func (lr LotbotRepo) AddStudent(ctx context.Context, student *Student, ops ...Op
 func (lr LotbotRepo) UpdateStudent(ctx context.Context, student *Student, ops ...OpFunc) (bool, error) {
 	q := lr.db.ModelContext(ctx, student).WherePK()
 	if len(ops) == 0 {
-		q = q.ExcludeColumn(Columns.Student.ID)
+		q = q.ExcludeColumn(Columns.Student.ID, Columns.Student.CreatedAt)
 	}
 	applyOps(q, ops...)
 	res, err := q.Update()

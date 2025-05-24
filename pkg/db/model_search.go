@@ -63,6 +63,7 @@ type CompanySearch struct {
 	UserName      *string
 	Inn           *string
 	Phone         *string
+	CreatedAt     *time.Time
 	IDs           []int
 	NameILike     *string
 	TgIDILike     *int64
@@ -99,6 +100,9 @@ func (cs *CompanySearch) Apply(query *orm.Query) *orm.Query {
 	}
 	if cs.Phone != nil {
 		cs.where(query, Tables.Company.Alias, Columns.Company.Phone, cs.Phone)
+	}
+	if cs.CreatedAt != nil {
+		cs.where(query, Tables.Company.Alias, Columns.Company.CreatedAt, cs.CreatedAt)
 	}
 	if len(cs.IDs) > 0 {
 		Filter{Columns.Company.ID, cs.IDs, SearchTypeArray, false}.Apply(query)
@@ -147,6 +151,7 @@ type StudentSearch struct {
 	Email         *string
 	StatusID      *int
 	Birthday      *string
+	CreatedAt     *time.Time
 	IDs           []int
 	TgIDILike     *int64
 	NameILike     *string
@@ -183,6 +188,9 @@ func (ss *StudentSearch) Apply(query *orm.Query) *orm.Query {
 	}
 	if ss.Birthday != nil {
 		ss.where(query, Tables.Student.Alias, Columns.Student.Birthday, ss.Birthday)
+	}
+	if ss.CreatedAt != nil {
+		ss.where(query, Tables.Student.Alias, Columns.Student.CreatedAt, ss.CreatedAt)
 	}
 	if len(ss.IDs) > 0 {
 		Filter{Columns.Student.ID, ss.IDs, SearchTypeArray, false}.Apply(query)

@@ -10,10 +10,10 @@ import (
 
 var Columns = struct {
 	Company struct {
-		ID, Name, TgID, Scope, StatusID, UserName, Inn, Phone string
+		ID, Name, TgID, Scope, StatusID, UserName, Inn, Phone, CreatedAt string
 	}
 	Student struct {
-		ID, TgID, Name, City, Scope, Email, StatusID, Birthday string
+		ID, TgID, Name, City, Scope, Email, StatusID, Birthday, CreatedAt string
 	}
 	Task struct {
 		ID, CompanyID, Scope, Description, Link, Deadline, ContactSlot, StatusID, StudentID, Budget, YougileID, Name, Deadline, Url, CreatedAt string
@@ -22,28 +22,30 @@ var Columns = struct {
 	}
 }{
 	Company: struct {
-		ID, Name, TgID, Scope, StatusID, UserName, Inn, Phone string
+		ID, Name, TgID, Scope, StatusID, UserName, Inn, Phone, CreatedAt string
 	}{
-		ID:       "companyId",
-		Name:     "name",
-		TgID:     "tgId",
-		Scope:    "scope",
-		StatusID: "statusId",
-		UserName: "userName",
-		Inn:      "inn",
-		Phone:    "phone",
+		ID:        "companyId",
+		Name:      "name",
+		TgID:      "tgId",
+		Scope:     "scope",
+		StatusID:  "statusId",
+		UserName:  "userName",
+		Inn:       "inn",
+		Phone:     "phone",
+		CreatedAt: "createdAt",
 	},
 	Student: struct {
-		ID, TgID, Name, City, Scope, Email, StatusID, Birthday string
+		ID, TgID, Name, City, Scope, Email, StatusID, Birthday, CreatedAt string
 	}{
-		ID:       "studentId",
-		TgID:     "tgId",
-		Name:     "name",
-		City:     "city",
-		Scope:    "scope",
-		Email:    "email",
-		StatusID: "statusId",
-		Birthday: "birthday",
+		ID:        "studentId",
+		TgID:      "tgId",
+		Name:      "name",
+		City:      "city",
+		Scope:     "scope",
+		Email:     "email",
+		StatusID:  "statusId",
+		Birthday:  "birthday",
+		CreatedAt: "createdAt",
 	},
 	Task: struct {
 		ID, CompanyID, Scope, Description, Link, Deadline, ContactSlot, StatusID, StudentID, Budget, YougileID, Name, Deadline, Url, CreatedAt string
@@ -105,27 +107,29 @@ var Tables = struct {
 type Company struct {
 	tableName struct{} `pg:"companies,alias:t,discard_unknown_columns"`
 
-	ID       int    `pg:"companyId,pk"`
-	Name     string `pg:"name,use_zero"`
-	TgID     int64  `pg:"tgId,use_zero"`
-	Scope    string `pg:"scope,use_zero"`
-	StatusID int    `pg:"statusId,use_zero"`
-	UserName string `pg:"userName,use_zero"`
-	Inn      string `pg:"inn,use_zero"`
-	Phone    string `pg:"phone,use_zero"`
+	ID        int       `pg:"companyId,pk"`
+	Name      string    `pg:"name,use_zero"`
+	TgID      int64     `pg:"tgId,use_zero"`
+	Scope     string    `pg:"scope,use_zero"`
+	StatusID  int       `pg:"statusId,use_zero"`
+	UserName  string    `pg:"userName,use_zero"`
+	Inn       string    `pg:"inn,use_zero"`
+	Phone     string    `pg:"phone,use_zero"`
+	CreatedAt time.Time `pg:"createdAt,use_zero"`
 }
 
 type Student struct {
 	tableName struct{} `pg:"students,alias:t,discard_unknown_columns"`
 
-	ID       int    `pg:"studentId,pk"`
-	TgID     int64  `pg:"tgId,use_zero"`
-	Name     string `pg:"name,use_zero"`
-	City     string `pg:"city,use_zero"`
-	Scope    string `pg:"scope,use_zero"`
-	Email    string `pg:"email,use_zero"`
-	StatusID int    `pg:"statusId,use_zero"`
-	Birthday string `pg:"birthday,use_zero"`
+	ID        int       `pg:"studentId,pk"`
+	TgID      int64     `pg:"tgId,use_zero"`
+	Name      string    `pg:"name,use_zero"`
+	City      string    `pg:"city,use_zero"`
+	Scope     string    `pg:"scope,use_zero"`
+	Email     string    `pg:"email,use_zero"`
+	StatusID  int       `pg:"statusId,use_zero"`
+	Birthday  string    `pg:"birthday,use_zero"`
+	CreatedAt time.Time `pg:"createdAt,use_zero"`
 }
 
 type Task struct {
