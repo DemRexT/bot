@@ -1,6 +1,6 @@
 ﻿-- =============================================================================
 -- Diagram Name: apisrv
--- Created on: 20.05.2025 15:44:52
+-- Created on: 24.05.2025 5:05:52
 -- Diagram Version:
 -- =============================================================================
 
@@ -13,21 +13,27 @@ CREATE TABLE "companies" (
                              "userName" varchar(128) NOT NULL,
                              "phone" text NOT NULL,
                              "statusId" int4 NOT NULL,
+                             "createdAt" timestamp NOT NULL DEFAULT now(),
                              PRIMARY KEY("companyId")
 );
+
+
 
 CREATE TABLE "tasks" (
                          "taskId" SERIAL NOT NULL,
                          "companyId" int4 NOT NULL,
+                         "name" text,
                          "scope" text NOT NULL,
                          "description" text NOT NULL,
                          "link" text NOT NULL,
-                         "deadline" date NOT NULL,
+                         "deadline" text NOT NULL,
                          "contactSlot" text NOT NULL,
                          "statusId" int4 NOT NULL,
                          "studentId" int4,
                          "budget" float8 NOT NULL,
                          "yougileId" text,
+                         "url" text,
+                         "createdAt" timestamp NOT NULL DEFAULT now(),
                          PRIMARY KEY("taskId")
 );
 
@@ -40,6 +46,7 @@ CREATE TABLE "students" (
                             "scope" text NOT NULL,
                             "email" text NOT NULL,
                             "statusId" int4 NOT NULL,
+                            "createdAt" timestamp NOT NULL DEFAULT now(),
                             PRIMARY KEY("studentId")
 );
 
