@@ -56,6 +56,10 @@
                 <Attribute Name="StudentID" DBName="studentId" DBType="int4" GoType="*int" PK="false" FK="Student" Nullable="Yes" Addable="true" Updatable="true" Min="0" Max="0"></Attribute>
                 <Attribute Name="Budget" DBName="budget" DBType="float8" GoType="float64" PK="false" Nullable="No" Addable="true" Updatable="true" Min="0" Max="0"></Attribute>
                 <Attribute Name="YougileID" DBName="yougileId" DBType="text" GoType="*string" PK="false" Nullable="Yes" Addable="true" Updatable="true" Min="0" Max="0"></Attribute>
+                <Attribute Name="Name" DBName="name" DBType="text" GoType="*string" PK="false" Nullable="Yes" Addable="true" Updatable="true" Min="0" Max="0"></Attribute>
+                <Attribute Name="Deadline" DBName="deadline" DBType="text" GoType="string" PK="false" Nullable="No" Addable="true" Updatable="true" Min="0" Max="0"></Attribute>
+                <Attribute Name="Url" DBName="url" DBType="text" GoType="*string" PK="false" Nullable="Yes" Addable="true" Updatable="true" Min="0" Max="0"></Attribute>
+                <Attribute Name="CreatedAt" DBName="createdAt" DBType="timestamp" GoType="time.Time" PK="false" Nullable="No" Addable="false" Updatable="false" Min="0" Max="0"></Attribute>
             </Attributes>
             <Searches>
                 <Search Name="IDs" AttrName="ID" SearchType="SEARCHTYPE_ARRAY"></Search>
@@ -64,6 +68,9 @@
                 <Search Name="LinkILike" AttrName="Link" SearchType="SEARCHTYPE_ILIKE"></Search>
                 <Search Name="ContactSlotILike" AttrName="ContactSlot" SearchType="SEARCHTYPE_ILIKE"></Search>
                 <Search Name="YougileIDILike" AttrName="YougileID" SearchType="SEARCHTYPE_ILIKE"></Search>
+                <Search Name="NameILike" AttrName="Name" SearchType="SEARCHTYPE_ILIKE"></Search>
+                <Search Name="DeadlineILike" AttrName="Deadline" SearchType="SEARCHTYPE_ILIKE"></Search>
+                <Search Name="UrlILike" AttrName="Url" SearchType="SEARCHTYPE_ILIKE"></Search>
             </Searches>
         </Entity>
     </Entities>

@@ -16,7 +16,7 @@ var Columns = struct {
 		ID, TgID, Name, City, Scope, Email, StatusID, Birthday string
 	}
 	Task struct {
-		ID, CompanyID, Scope, Description, Link, Deadline, ContactSlot, StatusID, StudentID, Budget, YougileID string
+		ID, CompanyID, Scope, Description, Link, Deadline, ContactSlot, StatusID, StudentID, Budget, YougileID, Name, Deadline, Url, CreatedAt string
 
 		Company, Student string
 	}
@@ -46,7 +46,7 @@ var Columns = struct {
 		Birthday: "birthday",
 	},
 	Task: struct {
-		ID, CompanyID, Scope, Description, Link, Deadline, ContactSlot, StatusID, StudentID, Budget, YougileID string
+		ID, CompanyID, Scope, Description, Link, Deadline, ContactSlot, StatusID, StudentID, Budget, YougileID, Name, Deadline, Url, CreatedAt string
 
 		Company, Student string
 	}{
@@ -61,6 +61,10 @@ var Columns = struct {
 		StudentID:   "studentId",
 		Budget:      "budget",
 		YougileID:   "yougileId",
+		Name:        "name",
+		Deadline:    "deadline",
+		Url:         "url",
+		CreatedAt:   "createdAt",
 
 		Company: "Company",
 		Student: "Student",
@@ -138,6 +142,10 @@ type Task struct {
 	StudentID   *int      `pg:"studentId"`
 	Budget      float64   `pg:"budget,use_zero"`
 	YougileID   *string   `pg:"yougileId"`
+	Name        *string   `pg:"name"`
+	Deadline    string    `pg:"deadline,use_zero"`
+	Url         *string   `pg:"url"`
+	CreatedAt   time.Time `pg:"createdAt,use_zero"`
 
 	Company *Company `pg:"fk:companyId,rel:has-one"`
 	Student *Student `pg:"fk:studentId,rel:has-one"`

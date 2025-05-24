@@ -27,7 +27,7 @@ func NewLotbotRepo(db orm.DB) LotbotRepo {
 		sort: map[string][]SortField{
 			Tables.Company.Name: {{Column: Columns.Company.ID, Direction: SortDesc}},
 			Tables.Student.Name: {{Column: Columns.Student.ID, Direction: SortDesc}},
-			Tables.Task.Name:    {{Column: Columns.Task.ID, Direction: SortDesc}},
+			Tables.Task.Name:    {{Column: Columns.Task.CreatedAt, Direction: SortDesc}},
 		},
 		join: map[string][]string{
 			Tables.Company.Name: {TableColumns},
@@ -247,6 +247,9 @@ func (lr LotbotRepo) CountTasks(ctx context.Context, search *TaskSearch, ops ...
 // AddTask adds Task to DB.
 func (lr LotbotRepo) AddTask(ctx context.Context, task *Task, ops ...OpFunc) (*Task, error) {
 	q := lr.db.ModelContext(ctx, task)
+	if len(ops) == 0 {
+		q = q.ExcludeColumn(Columns.Task.CreatedAt)
+	}
 	applyOps(q, ops...)
 	_, err := q.Insert()
 
@@ -257,7 +260,7 @@ func (lr LotbotRepo) AddTask(ctx context.Context, task *Task, ops ...OpFunc) (*T
 func (lr LotbotRepo) UpdateTask(ctx context.Context, task *Task, ops ...OpFunc) (bool, error) {
 	q := lr.db.ModelContext(ctx, task).WherePK()
 	if len(ops) == 0 {
-		q = q.ExcludeColumn(Columns.Task.ID)
+		q = q.ExcludeColumn(Columns.Task.ID, Columns.Task.CreatedAt)
 	}
 	applyOps(q, ops...)
 	res, err := q.Update()
