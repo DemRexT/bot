@@ -1457,13 +1457,20 @@ func (bm BotManager) VerificationRequest(ctx context.Context, b *bot.Bot, update
 		},
 	}
 
+	if task.Name == nil {
+		bm.Errorf("task name is null")
+		return
+	}
+
 	response := fmt.Sprintf(RequestTaskVerification,
-		task.Name, tgID, update.Message.From.ID)
+		*task.Name, tgID, update.Message.From.ID)
 
 	err = bm.Yougile.MoveTaskToColumn(*task.YougileID, ColumnReviewCurator)
 	if err != nil {
 		bm.Errorf("ошибка перемещения задачи: %v", err)
 	}
+
+	bm.Printf("сообщение в чат админов: %s", response)
 
 	_, err = b.SendMessage(ctx, &bot.SendMessageParams{
 		ChatID:      bm.adminChatID,
