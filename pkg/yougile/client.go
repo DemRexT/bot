@@ -28,10 +28,11 @@ const baseURL = "https://ru.yougile.com/api-v2"
 
 type TaskPayload struct {
 	Title       string `json:"title"`
-	ColumnID    string `json:"columnId"`
+	ColumnId    string `json:"columnId"`
 	Description string `json:"description"`
-	Archived    bool   `json:"archived"`
-	Completed   bool   `json:"completed"`
+	Deadline    struct {
+		Deadline int64 `json:"deadline"`
+	} `json:"deadline"`
 }
 type TaskResponse struct {
 	ID string `json:"id"`

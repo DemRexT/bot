@@ -10,7 +10,7 @@ Content-Type: application/json
   "skill": [
     "Написание текстов"
   ],
-  "email": "danila.glazatov1234@gmail.com"
+  "email": "impressia.nn@gmail.com"
 }
 
 ### Отправка данных компании
@@ -26,13 +26,13 @@ Content-Type: application/json
   "ContactPersonPhone": "123"
 }
 
-### Отправка данных при создании лота
+### Отправка данных при создании задачи
 POST localhost:8075/formlot
 Content-Type: application/json
 
 {
   "tgId": "1098511932",
-  "nameTask": "название",
+  "nameTask": "Тест",
   "description": "описание",
   "budget": "123123",
   "direction": "Подготовка презентаций",

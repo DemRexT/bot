@@ -236,7 +236,6 @@ type TaskSearch struct {
 	Scope            *string
 	Description      *string
 	Link             *string
-	Deadline         *time.Time
 	ContactSlot      *string
 	StatusID         *int
 	StudentID        *int
