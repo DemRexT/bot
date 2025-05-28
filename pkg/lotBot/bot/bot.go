@@ -145,24 +145,6 @@ func (bm BotManager) StartHandler(ctx context.Context, b *bot.Bot, update *model
 
 }
 
-func (bm BotManager) PayHandler(ctx context.Context, b *bot.Bot, update *models.Update) {
-	ChatID := update.Message.Chat.ID
-	redirectURL, err := bm.ic.AskApi(ChatID)
-	if err != nil {
-		bm.Errorf("Ошибка при вызове InvoiceBox API: %v", err)
-		_, _ = b.SendMessage(ctx, &bot.SendMessageParams{
-			ChatID: ChatID,
-			Text:   "Произошла ошибка при создании счёта. Попробуйте позже.",
-		})
-		return
-	}
-
-	_, _ = b.SendMessage(ctx, &bot.SendMessageParams{
-		ChatID: ChatID,
-		Text:   fmt.Sprintf("Счёт успешно создан! Перейдите по ссылке для оплаты:\n%s", redirectURL),
-	})
-}
-
 func (bm BotManager) PayStatusHandler(ctx context.Context, b *bot.Bot, paymentStatus string, TgChatID int64) {
 	ChatID := TgChatID
 	//Временно:
@@ -1611,16 +1593,17 @@ func (bm BotManager) ResponseVerificationTask(ctx context.Context, b *bot.Bot, u
 		bm.Errorf("не удалось отобразить карточку пользователя, len(parts) < 4\n")
 		return
 	}
-	bm.Printf("%v", update.CallbackQuery.Data)
+
+	taskId, err := strconv.Atoi(parts[4])
+	if err != nil {
+		bm.Errorf("%v", err)
+		return
+	}
+
 	var response string
 	switch parts[2] {
 	case "completed":
 		response = "Принято!\nЗаказчик принял твою работу! Ожидай оплату)"
-		taskId, err := strconv.Atoi(parts[4])
-		if err != nil {
-			bm.Errorf("%v", err)
-			return
-		}
 
 		searchTask := &db.TaskSearch{
 			ID: &taskId,
@@ -1660,6 +1643,31 @@ func (bm BotManager) ResponseVerificationTask(ctx context.Context, b *bot.Bot, u
 		} else {
 			bm.Printf("Обновление не затронуло ни одной строки")
 		}
+
+		ChatID := update.CallbackQuery.Message.Message.Chat.ID
+		redirectURL, err := bm.ic.AskApi(ChatID, strconv.Itoa(taskId), task.Description, task.Budget, *task.Name)
+		if err != nil {
+			bm.Errorf("Ошибка при вызове InvoiceBox API: %v", err)
+			_, _ = b.SendMessage(ctx, &bot.SendMessageParams{
+				ChatID: ChatID,
+				Text:   "Произошла ошибка при создании счёта. Попробуйте позже.",
+			})
+			return
+		}
+
+		kb := &models.InlineKeyboardMarkup{
+			InlineKeyboard: [][]models.InlineKeyboardButton{
+				{
+					{Text: "Ссылка на оплату", URL: redirectURL},
+				},
+			},
+		}
+
+		_, _ = b.SendMessage(ctx, &bot.SendMessageParams{
+			ChatID:      ChatID,
+			Text:        "Задача выполнена. Вот счет на оплату",
+			ReplyMarkup: kb,
+		})
 
 	case "revision":
 		response = "Задание проверено - все ок, но нужно кое-что доработать!"

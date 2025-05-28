@@ -7,7 +7,6 @@ import (
 
 func (a *App) registerBotHandlers() {
 	a.b.RegisterHandler(botLib.HandlerTypeMessageText, "/start", botLib.MatchTypeExact, a.bm.PrivateOnly(a.bm.StartHandler))
-	a.b.RegisterHandler(botLib.HandlerTypeMessageText, "/pay", botLib.MatchTypeExact, a.bm.PrivateOnly(a.bm.PayHandler))
 	a.b.RegisterHandler(botLib.HandlerTypeMessageText, "/place_task", botLib.MatchTypeExact, a.bm.PrivateOnly(a.bm.CreateTask))
 	a.b.RegisterHandler(botLib.HandlerTypeMessageText, "/ready_verification", botLib.MatchTypeExact, a.bm.PrivateOnly(a.bm.VerificationRequest))
 
