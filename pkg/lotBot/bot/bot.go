@@ -1645,7 +1645,7 @@ func (bm BotManager) ResponseVerificationTask(ctx context.Context, b *bot.Bot, u
 		return
 	}
 
-	taskId, err := strconv.Atoi(parts[4])
+	taskId, err := strconv.Atoi(parts[3])
 	if err != nil {
 		bm.Errorf("%v", err)
 		return
