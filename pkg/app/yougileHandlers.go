@@ -5,6 +5,7 @@ import (
 	"github.com/go-telegram/bot/models"
 	"github.com/labstack/echo/v4"
 	"io"
+	"lotBot/pkg/lotBot/bot"
 	"net/http"
 )
 
@@ -25,22 +26,28 @@ func (a *App) handleYougileResult(c echo.Context) error {
 			Data: string(body),
 		},
 	}
-	// Временная структура для проверки поля "event"
-	var payload struct {
-		Event string `json:"event"`
+
+	var task struct {
+		Event   string `json:"event"`
+		Payload struct {
+			ColumnId string `json:"columnId"`
+		} `json:"payload"`
 	}
 
-	if err := json.Unmarshal(body, &payload); err != nil {
+	if err := json.Unmarshal(body, &task); err != nil {
 		return c.JSON(http.StatusBadRequest, map[string]string{
 			"error": "Ошибка разбора JSON",
 		})
 	}
 
-	switch payload.Event {
+	switch task.Event {
 	case "task-updated":
 		a.bm.ViewTasks(c.Request().Context(), a.b, update)
 	case "task-moved":
-		a.bm.VerificationTask(c.Request().Context(), a.b, update)
+		if task.Payload.ColumnId == bot.ColumnInProgress {
+			a.bm.Printf("Сработало")
+			a.bm.VerificationTask(c.Request().Context(), a.b, update)
+		}
 	}
 
 	return c.JSON(http.StatusOK, map[string]string{"status": "Данные переданы на модерацию"})
