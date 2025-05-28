@@ -27,7 +27,7 @@ func NewInvoiceClient(logger embedlog.Logger, cfg Config) *InvoiceClient {
 
 const url = "https://api.invoicebox.ru/l3/billing/api/order/order"
 
-func (ic *InvoiceClient) AskApi(ChatID int64) (string, error) {
+func (ic *InvoiceClient) AskApi(ChatID int64, taskId string, description string, budget float64, name string) (string, error) {
 	type BasketItem struct {
 		SKU         string  `json:"sku"`
 		Name        string  `json:"name"`
@@ -55,19 +55,19 @@ func (ic *InvoiceClient) AskApi(ChatID int64) (string, error) {
 	}
 
 	order := CreateOrderRequest{
-		Description:     "Оплата услуг по оформлению бизнес-аккаунтов (Яндекс Бизнес, 2Гис)",
+		Description:     description,
 		MerchantID:      ic.cfg.MerchantID,
-		MerchantOrderID: "1",
-		Amount:          3000.00,
+		MerchantOrderID: taskId,
+		Amount:          budget,
 		CurrencyID:      "RUB",
 
 		BasketItems: []BasketItem{
 			{
-				SKU:         "sku123",
-				Name:        "Оформление бизнес-аккаунтов",
+				SKU:         taskId,
+				Name:        name,
 				Measure:     "шт.",
 				Quantity:    1,
-				Amount:      3000.00,
+				Amount:      budget,
 				VatCode:     "RUS_VAT20",
 				Type:        "service",
 				PaymentType: "full_prepayment",
