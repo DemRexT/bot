@@ -6,51 +6,47 @@ Content-Type: application/json
   "event": "task-updated",
   "payload": {
     "title": "название",
-    "timestamp": 1747780323922,
+    "timestamp": 1748264333564,
     "columnId": "5bfcc202-886a-4457-b037-15f8d5604558",
-    "description": "описание",
+    "description": "\n\tБюджет:123123\n\tОписание:описание\n",
     "archived": false,
     "completed": false,
-    "subtasks": [],
     "assigned": [
-      "ec4af5f1-f0c4-411e-a377-05fe104f7359"
+      "974996c7-0c98-494f-90c0-a246f449ab16"
     ],
     "createdBy": "974996c7-0c98-494f-90c0-a246f449ab16",
-    "checklists": [
-      {
-        "title": "Список",
-        "items": [
-          {
-            "isCompleted": false,
-            "title": "созвон"
-          }
-        ]
-      }
-    ],
-    "id": "986bd0fb-b435-43ab-9547-94280e7c097c",
+    "deadline": {
+      "deadline": 1744416000000,
+      "history": [
+        {
+          "deadline": 1744416000000,
+          "timestamp": 1748264333572,
+          "by": "974996c7-0c98-494f-90c0-a246f449ab16"
+        }
+      ]
+    },
+    "id": "1ff29ec3-81cb-4960-a045-b580d6670f49",
     "parents": []
   },
   "prevData": {
     "title": "название",
-    "timestamp": 1747780323922,
+    "timestamp": 1748264333564,
     "columnId": "5bfcc202-886a-4457-b037-15f8d5604558",
-    "description": "описание",
+    "description": "\n\tБюджет:123123\n\tОписание:описание\n",
     "archived": false,
     "completed": false,
-    "subtasks": [],
     "createdBy": "974996c7-0c98-494f-90c0-a246f449ab16",
-    "checklists": [
-      {
-        "title": "Список",
-        "items": [
-          {
-            "isCompleted": false,
-            "title": "созвон"
-          }
-        ]
-      }
-    ],
-    "id": "986bd0fb-b435-43ab-9547-94280e7c097c",
+    "deadline": {
+      "deadline": 1744416000000,
+      "history": [
+        {
+          "deadline": 1744416000000,
+          "timestamp": 1748264333572,
+          "by": "974996c7-0c98-494f-90c0-a246f449ab16"
+        }
+      ]
+    },
+    "id": "1ff29ec3-81cb-4960-a045-b580d6670f49",
     "parents": []
   },
   "fromUserId": "974996c7-0c98-494f-90c0-a246f449ab16"
@@ -74,7 +70,7 @@ Content-Type: application/json
       "974996c7-0c98-494f-90c0-a246f449ab16"
     ],
     "createdBy": "974996c7-0c98-494f-90c0-a246f449ab16",
-    "id": "a4e3ba73-fd70-4fa2-87b9-28089f4d0c71",
+    "id": "1ff29ec3-81cb-4960-a045-b580d6670f49",
     "parents": []
   },
   "prevData": {
@@ -88,7 +84,7 @@ Content-Type: application/json
       "974996c7-0c98-494f-90c0-a246f449ab16"
     ],
     "createdBy": "974996c7-0c98-494f-90c0-a246f449ab16",
-    "id": "a4e3ba73-fd70-4fa2-87b9-28089f4d0c71",
+    "id": "1ff29ec3-81cb-4960-a045-b580d6670f49",
     "parents": []
   },
   "fromUserId": "974996c7-0c98-494f-90c0-a246f449ab16"

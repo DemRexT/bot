@@ -63,6 +63,7 @@ type CompanySearch struct {
 	UserName      *string
 	Inn           *string
 	Phone         *string
+	CreatedAt     *time.Time
 	IDs           []int
 	NameILike     *string
 	TgIDILike     *int64
@@ -99,6 +100,9 @@ func (cs *CompanySearch) Apply(query *orm.Query) *orm.Query {
 	}
 	if cs.Phone != nil {
 		cs.where(query, Tables.Company.Alias, Columns.Company.Phone, cs.Phone)
+	}
+	if cs.CreatedAt != nil {
+		cs.where(query, Tables.Company.Alias, Columns.Company.CreatedAt, cs.CreatedAt)
 	}
 	if len(cs.IDs) > 0 {
 		Filter{Columns.Company.ID, cs.IDs, SearchTypeArray, false}.Apply(query)
@@ -147,6 +151,7 @@ type StudentSearch struct {
 	Email         *string
 	StatusID      *int
 	Birthday      *string
+	CreatedAt     *time.Time
 	IDs           []int
 	TgIDILike     *int64
 	NameILike     *string
@@ -183,6 +188,9 @@ func (ss *StudentSearch) Apply(query *orm.Query) *orm.Query {
 	}
 	if ss.Birthday != nil {
 		ss.where(query, Tables.Student.Alias, Columns.Student.Birthday, ss.Birthday)
+	}
+	if ss.CreatedAt != nil {
+		ss.where(query, Tables.Student.Alias, Columns.Student.CreatedAt, ss.CreatedAt)
 	}
 	if len(ss.IDs) > 0 {
 		Filter{Columns.Student.ID, ss.IDs, SearchTypeArray, false}.Apply(query)
@@ -228,18 +236,24 @@ type TaskSearch struct {
 	Scope            *string
 	Description      *string
 	Link             *string
-	Deadline         *time.Time
 	ContactSlot      *string
 	StatusID         *int
 	StudentID        *int
 	Budget           *float64
 	YougileID        *string
+	Name             *string
+	Deadline         *string
+	Url              *string
+	CreatedAt        *time.Time
 	IDs              []int
 	ScopeILike       *string
 	DescriptionILike *string
 	LinkILike        *string
 	ContactSlotILike *string
 	YougileIDILike   *string
+	NameILike        *string
+	DeadlineILike    *time.Time
+	UrlILike         *string
 }
 
 func (ts *TaskSearch) Apply(query *orm.Query) *orm.Query {
@@ -279,6 +293,18 @@ func (ts *TaskSearch) Apply(query *orm.Query) *orm.Query {
 	if ts.YougileID != nil {
 		ts.where(query, Tables.Task.Alias, Columns.Task.YougileID, ts.YougileID)
 	}
+	if ts.Name != nil {
+		ts.where(query, Tables.Task.Alias, Columns.Task.Name, ts.Name)
+	}
+	if ts.Deadline != nil {
+		ts.where(query, Tables.Task.Alias, Columns.Task.Deadline, ts.Deadline)
+	}
+	if ts.Url != nil {
+		ts.where(query, Tables.Task.Alias, Columns.Task.Url, ts.Url)
+	}
+	if ts.CreatedAt != nil {
+		ts.where(query, Tables.Task.Alias, Columns.Task.CreatedAt, ts.CreatedAt)
+	}
 	if len(ts.IDs) > 0 {
 		Filter{Columns.Task.ID, ts.IDs, SearchTypeArray, false}.Apply(query)
 	}
@@ -296,6 +322,15 @@ func (ts *TaskSearch) Apply(query *orm.Query) *orm.Query {
 	}
 	if ts.YougileIDILike != nil {
 		Filter{Columns.Task.YougileID, *ts.YougileIDILike, SearchTypeILike, false}.Apply(query)
+	}
+	if ts.NameILike != nil {
+		Filter{Columns.Task.Name, *ts.NameILike, SearchTypeILike, false}.Apply(query)
+	}
+	if ts.DeadlineILike != nil {
+		Filter{Columns.Task.Deadline, *ts.DeadlineILike, SearchTypeILike, false}.Apply(query)
+	}
+	if ts.UrlILike != nil {
+		Filter{Columns.Task.Url, *ts.UrlILike, SearchTypeILike, false}.Apply(query)
 	}
 
 	ts.apply(query)
