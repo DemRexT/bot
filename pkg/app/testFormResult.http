@@ -3,6 +3,7 @@ POST localhost:8075/formstudent
 Content-Type: application/json
 
 {
+  "nicknameTg": "demrext",
   "tgId": "1098511932",
   "Name": "Данила Глазатов",
   "birthday": "30.05.2004",
@@ -18,8 +19,10 @@ POST localhost:8075/formbusiness
 Content-Type: application/json
 
 {
+  "nicknameTg": "demrext",
   "tgId": "1098511932",
   "CompanyName": "123",
+  "Email": "impressia.nn@gmail.com",
   "INN": "123",
   "FieldOfActivity": "Финансы / бухгалтерия",
   "ContactPersonFullName": "123",

@@ -1,17 +1,20 @@
 package bot
 
 type StudentData struct {
-	Tgid     string   `json:"tgId"`
-	Name     string   `json:"Name"`
-	Birthday string   `json:"birthday"`
-	City     string   `json:"city"`
-	Skill    []string `json:"skill"`
-	Email    string   `json:"email"`
+	NicknameTg string   `json:"nicknameTg"`
+	TgId       string   `json:"tgId"`
+	Name       string   `json:"Name"`
+	Birthday   string   `json:"birthday"`
+	City       string   `json:"city"`
+	Skill      []string `json:"skill"`
+	Email      string   `json:"email"`
 }
 
 type BusinesData struct {
-	Tgid                  string `json:"tgId"`
+	NicknameTg            string `json:"nicknameTg"`
+	TgId                  string `json:"tgId"`
 	CompanyName           string `json:"CompanyName"`
+	Email                 string `json:"Email"`
 	INN                   string `json:"INN"`
 	FieldOfActivity       string `json:"FieldOfActivity"`
 	ContactPersonFullName string `json:"ContactPersonFullName"`

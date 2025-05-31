@@ -10,7 +10,7 @@ import (
 
 var Columns = struct {
 	Company struct {
-		ID, Name, TgID, Scope, StatusID, UserName, Inn, Phone, CreatedAt, NicknameTg string
+		ID, Name, TgID, Scope, StatusID, UserName, Inn, Phone, CreatedAt, NicknameTg, Email string
 	}
 	Student struct {
 		ID, TgID, Name, City, Scope, Email, StatusID, Birthday, CreatedAt, NicknameTg string
@@ -22,7 +22,7 @@ var Columns = struct {
 	}
 }{
 	Company: struct {
-		ID, Name, TgID, Scope, StatusID, UserName, Inn, Phone, CreatedAt, NicknameTg string
+		ID, Name, TgID, Scope, StatusID, UserName, Inn, Phone, CreatedAt, NicknameTg, Email string
 	}{
 		ID:         "companyId",
 		Name:       "name",
@@ -34,6 +34,7 @@ var Columns = struct {
 		Phone:      "phone",
 		CreatedAt:  "createdAt",
 		NicknameTg: "nicknameTg",
+		Email:      "email",
 	},
 	Student: struct {
 		ID, TgID, Name, City, Scope, Email, StatusID, Birthday, CreatedAt, NicknameTg string
@@ -118,6 +119,7 @@ type Company struct {
 	Phone      string    `pg:"phone,use_zero"`
 	CreatedAt  time.Time `pg:"createdAt,use_zero"`
 	NicknameTg *string   `pg:"nicknameTg"`
+	Email      *string   `pg:"email"`
 }
 
 type Student struct {

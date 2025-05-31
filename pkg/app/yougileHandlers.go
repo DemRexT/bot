@@ -45,7 +45,6 @@ func (a *App) handleYougileResult(c echo.Context) error {
 		a.bm.ViewTasks(c.Request().Context(), a.b, update)
 	case "task-moved":
 		if task.Payload.ColumnId == bot.ColumnInProgress {
-			a.bm.Printf("Сработало")
 			a.bm.VerificationTask(c.Request().Context(), a.b, update)
 		}
 	}
