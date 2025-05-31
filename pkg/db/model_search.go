@@ -55,22 +55,24 @@ type Searcher interface {
 type CompanySearch struct {
 	search
 
-	ID            *int
-	Name          *string
-	TgID          *int64
-	Scope         *string
-	StatusID      *int
-	UserName      *string
-	Inn           *string
-	Phone         *string
-	CreatedAt     *time.Time
-	IDs           []int
-	NameILike     *string
-	TgIDILike     *int64
-	ScopeILike    *string
-	UserNameILike *string
-	InnILike      *string
-	PhoneILike    *string
+	ID              *int
+	Name            *string
+	TgID            *int64
+	Scope           *string
+	StatusID        *int
+	UserName        *string
+	Inn             *string
+	Phone           *string
+	CreatedAt       *time.Time
+	NicknameTg      *string
+	IDs             []int
+	NameILike       *string
+	TgIDILike       *int64
+	ScopeILike      *string
+	UserNameILike   *string
+	InnILike        *string
+	PhoneILike      *string
+	NicknameTgILike *string
 }
 
 func (cs *CompanySearch) Apply(query *orm.Query) *orm.Query {
@@ -104,6 +106,9 @@ func (cs *CompanySearch) Apply(query *orm.Query) *orm.Query {
 	if cs.CreatedAt != nil {
 		cs.where(query, Tables.Company.Alias, Columns.Company.CreatedAt, cs.CreatedAt)
 	}
+	if cs.NicknameTg != nil {
+		cs.where(query, Tables.Company.Alias, Columns.Company.NicknameTg, cs.NicknameTg)
+	}
 	if len(cs.IDs) > 0 {
 		Filter{Columns.Company.ID, cs.IDs, SearchTypeArray, false}.Apply(query)
 	}
@@ -125,6 +130,9 @@ func (cs *CompanySearch) Apply(query *orm.Query) *orm.Query {
 	if cs.PhoneILike != nil {
 		Filter{Columns.Company.Phone, *cs.PhoneILike, SearchTypeILike, false}.Apply(query)
 	}
+	if cs.NicknameTgILike != nil {
+		Filter{Columns.Company.NicknameTg, *cs.NicknameTgILike, SearchTypeILike, false}.Apply(query)
+	}
 
 	cs.apply(query)
 
@@ -143,22 +151,24 @@ func (cs *CompanySearch) Q() applier {
 type StudentSearch struct {
 	search
 
-	ID            *int
-	TgID          *int64
-	Name          *string
-	City          *string
-	Scope         *string
-	Email         *string
-	StatusID      *int
-	Birthday      *string
-	CreatedAt     *time.Time
-	IDs           []int
-	TgIDILike     *int64
-	NameILike     *string
-	CityILike     *string
-	ScopeILike    *string
-	EmailILike    *string
-	BirthdayILike *string
+	ID              *int
+	TgID            *int64
+	Name            *string
+	City            *string
+	Scope           *string
+	Email           *string
+	StatusID        *int
+	Birthday        *string
+	CreatedAt       *time.Time
+	NicknameTg      *string
+	IDs             []int
+	TgIDILike       *int64
+	NameILike       *string
+	CityILike       *string
+	ScopeILike      *string
+	EmailILike      *string
+	BirthdayILike   *string
+	NicknameTgILike *string
 }
 
 func (ss *StudentSearch) Apply(query *orm.Query) *orm.Query {
@@ -192,6 +202,9 @@ func (ss *StudentSearch) Apply(query *orm.Query) *orm.Query {
 	if ss.CreatedAt != nil {
 		ss.where(query, Tables.Student.Alias, Columns.Student.CreatedAt, ss.CreatedAt)
 	}
+	if ss.NicknameTg != nil {
+		ss.where(query, Tables.Student.Alias, Columns.Student.NicknameTg, ss.NicknameTg)
+	}
 	if len(ss.IDs) > 0 {
 		Filter{Columns.Student.ID, ss.IDs, SearchTypeArray, false}.Apply(query)
 	}
@@ -212,6 +225,9 @@ func (ss *StudentSearch) Apply(query *orm.Query) *orm.Query {
 	}
 	if ss.BirthdayILike != nil {
 		Filter{Columns.Student.Birthday, *ss.BirthdayILike, SearchTypeILike, false}.Apply(query)
+	}
+	if ss.NicknameTgILike != nil {
+		Filter{Columns.Student.NicknameTg, *ss.NicknameTgILike, SearchTypeILike, false}.Apply(query)
 	}
 
 	ss.apply(query)
@@ -236,6 +252,7 @@ type TaskSearch struct {
 	Scope            *string
 	Description      *string
 	Link             *string
+	Deadline         *time.Time
 	ContactSlot      *string
 	StatusID         *int
 	StudentID        *int

@@ -12,6 +12,7 @@
                 <Attribute Name="Inn" DBName="inn" DBType="text" GoType="string" PK="false" Nullable="No" Addable="true" Updatable="true" Min="0" Max="0"></Attribute>
                 <Attribute Name="Phone" DBName="phone" DBType="text" GoType="string" PK="false" Nullable="No" Addable="true" Updatable="true" Min="0" Max="0"></Attribute>
                 <Attribute Name="CreatedAt" DBName="createdAt" DBType="timestamp" GoType="time.Time" PK="false" Nullable="No" Addable="false" Updatable="false" Min="0" Max="0"></Attribute>
+                <Attribute Name="NicknameTg" DBName="nicknameTg" DBType="text" GoType="*string" PK="false" Nullable="Yes" Addable="true" Updatable="true" Min="0" Max="0"></Attribute>
             </Attributes>
             <Searches>
                 <Search Name="IDs" AttrName="ID" SearchType="SEARCHTYPE_ARRAY"></Search>
@@ -21,6 +22,7 @@
                 <Search Name="UserNameILike" AttrName="UserName" SearchType="SEARCHTYPE_ILIKE"></Search>
                 <Search Name="InnILike" AttrName="Inn" SearchType="SEARCHTYPE_ILIKE"></Search>
                 <Search Name="PhoneILike" AttrName="Phone" SearchType="SEARCHTYPE_ILIKE"></Search>
+                <Search Name="NicknameTgILike" AttrName="NicknameTg" SearchType="SEARCHTYPE_ILIKE"></Search>
             </Searches>
         </Entity>
         <Entity Name="Student" Namespace="lotbot" Table="students">
@@ -34,6 +36,7 @@
                 <Attribute Name="StatusID" DBName="statusId" DBType="int4" GoType="int" PK="false" Nullable="No" Addable="true" Updatable="true" Min="0" Max="0"></Attribute>
                 <Attribute Name="Birthday" DBName="birthday" DBType="text" GoType="string" PK="false" Nullable="No" Addable="true" Updatable="true" Min="0" Max="0"></Attribute>
                 <Attribute Name="CreatedAt" DBName="createdAt" DBType="timestamp" GoType="time.Time" PK="false" Nullable="No" Addable="false" Updatable="false" Min="0" Max="0"></Attribute>
+                <Attribute Name="NicknameTg" DBName="nicknameTg" DBType="text" GoType="*string" PK="false" Nullable="Yes" Addable="true" Updatable="true" Min="0" Max="0"></Attribute>
             </Attributes>
             <Searches>
                 <Search Name="IDs" AttrName="ID" SearchType="SEARCHTYPE_ARRAY"></Search>
@@ -43,6 +46,7 @@
                 <Search Name="ScopeILike" AttrName="Scope" SearchType="SEARCHTYPE_ILIKE"></Search>
                 <Search Name="EmailILike" AttrName="Email" SearchType="SEARCHTYPE_ILIKE"></Search>
                 <Search Name="BirthdayILike" AttrName="Birthday" SearchType="SEARCHTYPE_ILIKE"></Search>
+                <Search Name="NicknameTgILike" AttrName="NicknameTg" SearchType="SEARCHTYPE_ILIKE"></Search>
             </Searches>
         </Entity>
         <Entity Name="Task" Namespace="lotbot" Table="tasks">

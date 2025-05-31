@@ -50,7 +50,7 @@ const (
 	PatternTaskCheckResponse          = "check_response"
 	PatternVerificationToTheRequester = "verification_requester"
 	UrlRegisterStudent                = "https://docs.google.com/forms/d/e/1FAIpQLSemsbNWCx2ewY25WlvQP_baBef6RUs1jF0w1p4obb99ieXFAw/viewform?usp=pp_url&entry.1082496981="
-	UrlRegisterBusiness               = "https://docs.google.com/forms/d/e/1FAIpQLSdz5iYc9UB6M3wOOrGGl-4jTywltlkl7AZgqXrNKIBqrY87mA/viewform?usp=pp_url&entry.213949143="
+	UrlRegisterBusiness               = "https://docs.google.com/forms/d/e/1FAIpQLSdz5iYc9UB6M3wOOrGGl-4jTywltlkl7AZgqXrNKIBqrY87mA/viewform?usp=pp_url&entry.727582242=%s&entry.213949143=%s"
 	UrlCreateTask                     = "https://docs.google.com/forms/d/e/1FAIpQLScQgB6T74K87rZHi8a9qi-l565V3rrO5sKUlHe9LStZiRM3YA/viewform?usp=pp_url&entry.995903952="
 	UrlTelegrammChat                  = "https://web.telegram.org/a/#"
 	UrlTask                           = "https://ru.yougile.com/team/005706c078bc/#%s"
@@ -233,6 +233,8 @@ func (bm BotManager) Register(ctx context.Context, b *bot.Bot, update *models.Up
 		return
 	}
 
+	username := update.CallbackQuery.From.Username
+
 	var kb *models.InlineKeyboardMarkup
 	switch update.CallbackQuery.Data {
 	case PatternRegister + "Teen":
@@ -242,7 +244,7 @@ func (bm BotManager) Register(ctx context.Context, b *bot.Bot, update *models.Up
 				{
 					{
 						Text:         "Пройти регистрацию",
-						URL:          UrlRegisterStudent + strconv.FormatInt(update.CallbackQuery.From.ID, 10),
+						URL:          fmt.Sprintf(UrlRegisterStudent, username, strconv.FormatInt(update.CallbackQuery.From.ID, 10)),
 						CallbackData: PatternSubmitModeration + update.CallbackQuery.Data,
 					},
 				},
@@ -255,7 +257,7 @@ func (bm BotManager) Register(ctx context.Context, b *bot.Bot, update *models.Up
 				{
 					{
 						Text:         "Пройти регистрацию",
-						URL:          UrlRegisterBusiness + strconv.FormatInt(update.CallbackQuery.From.ID, 10),
+						URL:          fmt.Sprintf(UrlRegisterBusiness, username, strconv.FormatInt(update.CallbackQuery.From.ID, 10)),
 						CallbackData: PatternSubmitModeration + update.CallbackQuery.Data,
 					},
 				},
@@ -1645,7 +1647,7 @@ func (bm BotManager) ResponseVerificationTask(ctx context.Context, b *bot.Bot, u
 		return
 	}
 
-	taskId, err := strconv.Atoi(parts[4])
+	taskId, err := strconv.Atoi(parts[3])
 	if err != nil {
 		bm.Errorf("%v", err)
 		return
