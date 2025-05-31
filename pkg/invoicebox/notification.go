@@ -31,11 +31,13 @@ type InvoiceNotification struct {
 	CurrencyID string  `json:"currencyId"`
 
 	MetaData struct {
-		TgChatID int64 `json:"chatId"`
+		TgChatID      int64  `json:"TgChatID"`
+		StudentTgId   int64  `json:"StudentTgId"`
+		YougileIdTask string `json:"YougileIdTask"`
 	} `json:"metaData"`
 }
 
-func (h *WebhookHandler) HandleConfirmation(w http.ResponseWriter, r *http.Request) (paymentStatus string, chatId int64) {
+func (h *WebhookHandler) HandleConfirmation(w http.ResponseWriter, r *http.Request) (paymentStatus string, chatId int64, studentChatId int64, yougileId string) {
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
 		http.Error(w, "can't read body", http.StatusBadRequest)
@@ -72,6 +74,8 @@ func (h *WebhookHandler) HandleConfirmation(w http.ResponseWriter, r *http.Reque
 	}
 
 	chatId = notification.MetaData.TgChatID
+	studentChatId = notification.MetaData.StudentTgId
+	yougileId = notification.MetaData.YougileIdTask
 
 	h.Printf("TgID from API (notification): %d\n", chatId)
 	h.Printf("Ожидали %.2f, пришло %.2f\n", task.Budget, notification.Amount)

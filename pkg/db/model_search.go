@@ -65,6 +65,7 @@ type CompanySearch struct {
 	Phone           *string
 	CreatedAt       *time.Time
 	NicknameTg      *string
+	Email           *string
 	IDs             []int
 	NameILike       *string
 	TgIDILike       *int64
@@ -73,6 +74,7 @@ type CompanySearch struct {
 	InnILike        *string
 	PhoneILike      *string
 	NicknameTgILike *string
+	EmailILike      *string
 }
 
 func (cs *CompanySearch) Apply(query *orm.Query) *orm.Query {
@@ -109,6 +111,9 @@ func (cs *CompanySearch) Apply(query *orm.Query) *orm.Query {
 	if cs.NicknameTg != nil {
 		cs.where(query, Tables.Company.Alias, Columns.Company.NicknameTg, cs.NicknameTg)
 	}
+	if cs.Email != nil {
+		cs.where(query, Tables.Company.Alias, Columns.Company.Email, cs.Email)
+	}
 	if len(cs.IDs) > 0 {
 		Filter{Columns.Company.ID, cs.IDs, SearchTypeArray, false}.Apply(query)
 	}
@@ -132,6 +137,9 @@ func (cs *CompanySearch) Apply(query *orm.Query) *orm.Query {
 	}
 	if cs.NicknameTgILike != nil {
 		Filter{Columns.Company.NicknameTg, *cs.NicknameTgILike, SearchTypeILike, false}.Apply(query)
+	}
+	if cs.EmailILike != nil {
+		Filter{Columns.Company.Email, *cs.EmailILike, SearchTypeILike, false}.Apply(query)
 	}
 
 	cs.apply(query)
@@ -252,7 +260,6 @@ type TaskSearch struct {
 	Scope            *string
 	Description      *string
 	Link             *string
-	Deadline         *time.Time
 	ContactSlot      *string
 	StatusID         *int
 	StudentID        *int

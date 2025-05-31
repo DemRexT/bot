@@ -49,7 +49,7 @@ const (
 	PatternLater                      = "later"
 	PatternTaskCheckResponse          = "check_response"
 	PatternVerificationToTheRequester = "verification_requester"
-	UrlRegisterStudent                = "https://docs.google.com/forms/d/e/1FAIpQLSemsbNWCx2ewY25WlvQP_baBef6RUs1jF0w1p4obb99ieXFAw/viewform?usp=pp_url&entry.1082496981="
+	UrlRegisterStudent                = "https://docs.google.com/forms/d/e/1FAIpQLSemsbNWCx2ewY25WlvQP_baBef6RUs1jF0w1p4obb99ieXFAw/viewform?usp=pp_url&entry.466956954=%s&entry.1082496981=%s"
 	UrlRegisterBusiness               = "https://docs.google.com/forms/d/e/1FAIpQLSdz5iYc9UB6M3wOOrGGl-4jTywltlkl7AZgqXrNKIBqrY87mA/viewform?usp=pp_url&entry.727582242=%s&entry.213949143=%s"
 	UrlCreateTask                     = "https://docs.google.com/forms/d/e/1FAIpQLScQgB6T74K87rZHi8a9qi-l565V3rrO5sKUlHe9LStZiRM3YA/viewform?usp=pp_url&entry.995903952="
 	UrlTelegrammChat                  = "https://web.telegram.org/a/#"
@@ -145,7 +145,7 @@ func (bm BotManager) StartHandler(ctx context.Context, b *bot.Bot, update *model
 
 }
 
-func (bm BotManager) PayStatusHandler(ctx context.Context, b *bot.Bot, paymentStatus string, TgChatID int64) {
+func (bm BotManager) PayStatusHandler(ctx context.Context, b *bot.Bot, paymentStatus string, TgChatID int64, studentChatId int64, yougileId string) {
 	ChatID := TgChatID
 	//Временно:
 	SurveyURL := "https://workspace.google.com/intl/ru/products/forms/"
@@ -156,6 +156,44 @@ func (bm BotManager) PayStatusHandler(ctx context.Context, b *bot.Bot, paymentSt
 		_, err := b.SendMessage(ctx, &bot.SendMessageParams{
 			ChatID: ChatID,
 			Text:   fmt.Sprintf("Оплату приняли, спасибо за сотрудничество!\nПожалуйста, оцените работу сервиса: \n%s", SurveyURL),
+		})
+		if err != nil {
+			bm.Errorf("%v", err)
+		}
+
+		err = bm.Yougile.MoveTaskToColumn(yougileId, ColumnPaid)
+		if err != nil {
+			bm.Errorf("%v", err)
+		}
+
+		kb := &models.InlineKeyboardMarkup{
+			InlineKeyboard: [][]models.InlineKeyboardButton{
+				{
+					{
+						Text:         "Да",
+						CallbackData: PatternCreateTask,
+					},
+					{
+						Text:         "Позже",
+						CallbackData: PatternLater,
+					},
+				},
+			},
+		}
+
+		_, err = b.SendMessage(ctx, &bot.SendMessageParams{
+			ChatID:      ChatID,
+			Text:        "Спасибо за сотрудничество! Готовы разместить следующую задачу?",
+			ReplyMarkup: kb,
+		})
+
+		if err != nil {
+			bm.Errorf("%v", err)
+		}
+
+		_, err = b.SendMessage(ctx, &bot.SendMessageParams{
+			ChatID: studentChatId,
+			Text:   "Заказчик оплатил заказ \nОжидайте оплаты!",
 		})
 		if err != nil {
 			bm.Errorf("%v", err)
@@ -305,9 +343,9 @@ func (bm BotManager) ModerationStudent(ctx context.Context, b *bot.Bot, update *
 		return
 	}
 
-	userID := data.Tgid
+	userID := data.TgId
 
-	tgid, err := strconv.ParseInt(data.Tgid, 10, 64)
+	tgid, err := strconv.ParseInt(data.TgId, 10, 64)
 	if err != nil {
 		bm.Errorf("Ошибка парсинга TgID: %v", err)
 		return
@@ -316,13 +354,14 @@ func (bm BotManager) ModerationStudent(ctx context.Context, b *bot.Bot, update *
 	joinedSkill := strings.Join(data.Skill, ", ")
 
 	student := &db.Student{
-		TgID:     tgid,
-		Name:     data.Name,
-		Birthday: data.Birthday,
-		City:     data.City,
-		Scope:    joinedSkill,
-		Email:    data.Email,
-		StatusID: 2,
+		TgID:       tgid,
+		Name:       data.Name,
+		Birthday:   data.Birthday,
+		City:       data.City,
+		Scope:      joinedSkill,
+		Email:      data.Email,
+		StatusID:   2,
+		NicknameTg: &data.NicknameTg,
 	}
 
 	_, err = bm.repo.AddStudent(ctx, student)
@@ -347,7 +386,7 @@ func (bm BotManager) ModerationStudent(ctx context.Context, b *bot.Bot, update *
 		},
 	}
 	response := fmt.Sprintf(ResponseStudentModeration,
-		data.Name, data.Birthday, data.City, data.Skill, data.Email)
+		data.Name, data.Birthday, data.City, data.Skill, data.Email, data.NicknameTg)
 
 	_, err = b.SendMessage(ctx, &bot.SendMessageParams{
 		ChatID:      bm.adminChatID,
@@ -395,21 +434,23 @@ func (bm BotManager) ModerationBusines(ctx context.Context, b *bot.Bot, update *
 		return
 	}
 
-	userID := data.Tgid
+	userID := data.TgId
 
-	tgid, err := strconv.ParseInt(data.Tgid, 10, 64)
+	tgid, err := strconv.ParseInt(data.TgId, 10, 64)
 	if err != nil {
 		bm.Errorf("Ошибка парсинга TgID: %v", err)
 		return
 	}
 
 	company := &db.Company{
-		Name:     data.CompanyName,
-		TgID:     tgid,
-		Inn:      data.INN,
-		Scope:    data.FieldOfActivity,
-		Phone:    data.ContactPersonPhone,
-		StatusID: 2,
+		Name:       data.CompanyName,
+		TgID:       tgid,
+		Inn:        data.INN,
+		Email:      &data.Email,
+		Scope:      data.FieldOfActivity,
+		Phone:      data.ContactPersonPhone,
+		StatusID:   2,
+		NicknameTg: &data.NicknameTg,
 	}
 
 	_, err = bm.repo.AddCompany(ctx, company)
@@ -435,7 +476,7 @@ func (bm BotManager) ModerationBusines(ctx context.Context, b *bot.Bot, update *
 	}
 
 	response := fmt.Sprintf(ResponseBusinessModeration,
-		data.CompanyName, data.INN, data.FieldOfActivity, data.ContactPersonFullName, data.ContactPersonPhone)
+		data.CompanyName, data.INN, data.FieldOfActivity, data.ContactPersonFullName, data.ContactPersonPhone, data.NicknameTg, data.Email)
 
 	_, err = b.SendMessage(ctx, &bot.SendMessageParams{
 		ChatID:      bm.adminChatID,
@@ -772,6 +813,24 @@ func (bm BotManager) ViewTasks(ctx context.Context, b *bot.Bot, update *models.U
 		ChatID:      student.TgID,
 		Text:        NewTask,
 		ReplyMarkup: kb,
+	})
+	if err != nil {
+		bm.Errorf("%v", err)
+	}
+
+	companySearch := &db.CompanySearch{ID: &taskdb.CompanyID}
+
+	company, err := bm.repo.OneCompany(ctx, companySearch)
+	if err != nil {
+		bm.Errorf("ошибка поиска компании по id: %v", err)
+		return
+	}
+
+	responseCompany := fmt.Sprintf(StudentFound, student.Name)
+
+	_, err = b.SendMessage(ctx, &bot.SendMessageParams{
+		ChatID: company.TgID,
+		Text:   responseCompany,
 	})
 	if err != nil {
 		bm.Errorf("%v", err)
@@ -1233,7 +1292,7 @@ func (bm BotManager) ModerationTask(ctx context.Context, b *bot.Bot, update *mod
 	}
 
 	response = fmt.Sprintf(ResponseTaskModeration,
-		data.NameTask, data.Direction, data.Description, data.Deadline, data.SlotCall)
+		data.NameTask, data.Direction, data.Description, data.Deadline, data.SlotCall, url)
 	row := []models.InlineKeyboardButton{
 		{
 			Text: "Cоздатель",
@@ -1402,7 +1461,7 @@ func (bm BotManager) VerificationTask(ctx context.Context, b *bot.Bot, update *m
 
 	_, err = b.SendMessage(ctx, &bot.SendMessageParams{
 		ChatID: student.TgID,
-		Text:   "Как будет готово, выберите в меню пункт \n\"Готово для проверки! - /ready_verification\"",
+		Text:   "Задача направлена в работу!\nКак будет готово, выберите в меню пункт \n\"Готово для проверки! - /ready_verification\"",
 	})
 	if err != nil {
 		bm.Errorf("Ошибка отправки сообщения: %v", err)
@@ -1502,7 +1561,16 @@ func (bm BotManager) VerificationRequest(ctx context.Context, b *bot.Bot, update
 		bm.Errorf("ошибка перемещения задачи: %v", err)
 	}
 
-	bm.Printf("сообщение в чат админов: %s", response)
+	_, err = b.SendMessage(ctx, &bot.SendMessageParams{
+		ChatID:    update.Message.Chat.ID,
+		Text:      "Задача отправлена на проверку",
+		ParseMode: "Markdown",
+	})
+
+	if err != nil {
+		bm.Errorf("Ошибка отправки сообщения: %v", err)
+		return
+	}
 
 	_, err = b.SendMessage(ctx, &bot.SendMessageParams{
 		ChatID:      bm.adminChatID,
@@ -1576,7 +1644,7 @@ func (bm BotManager) VerificationToTheRequester(ctx context.Context, b *bot.Bot,
 				},
 				{
 					Text:         "Отправить на доработку",
-					CallbackData: PatternTaskCheckResponse + "_revision_" + parts[2],
+					CallbackData: PatternTaskCheckResponse + "_revision_" + parts[2] + "_" + strconv.FormatInt(int64(task.ID), 10),
 				},
 			},
 			{
@@ -1647,26 +1715,26 @@ func (bm BotManager) ResponseVerificationTask(ctx context.Context, b *bot.Bot, u
 		return
 	}
 
-	taskId, err := strconv.Atoi(parts[3])
+	taskId, err := strconv.Atoi(parts[4])
 	if err != nil {
 		bm.Errorf("%v", err)
 		return
 	}
 
+	searchTask := &db.TaskSearch{
+		ID: &taskId,
+	}
+	tasks, err := bm.repo.TasksByFilters(ctx, searchTask, db.Pager{Page: 1, PageSize: 1})
+	if err != nil || len(tasks) == 0 {
+		return
+	}
+
+	task := tasks[0]
+
 	var response string
 	switch parts[2] {
 	case "completed":
 		response = "Принято!\nЗаказчик принял твою работу! Ожидай оплату)"
-
-		searchTask := &db.TaskSearch{
-			ID: &taskId,
-		}
-		tasks, err := bm.repo.TasksByFilters(ctx, searchTask, db.Pager{Page: 1, PageSize: 1})
-		if err != nil || len(tasks) == 0 {
-			return
-		}
-
-		task := tasks[0]
 
 		err = bm.Yougile.MoveTaskToColumn(*task.YougileID, ColumnDone)
 		tgid, err := strconv.ParseInt(parts[3], 10, 64)
@@ -1698,12 +1766,13 @@ func (bm BotManager) ResponseVerificationTask(ctx context.Context, b *bot.Bot, u
 		}
 
 		ChatID := update.CallbackQuery.Message.Message.Chat.ID
-		redirectURL, err := bm.ic.AskApi(ChatID, strconv.Itoa(taskId), task.Description, task.Budget, *task.Name)
+		redirectURL, err := bm.ic.AskApi(ChatID, strconv.Itoa(taskId), task.Description, task.Budget, *task.Name, student.TgID, *task.YougileID)
 		if err != nil {
 			bm.Errorf("Ошибка при вызове InvoiceBox API: %v", err)
-			_, _ = b.SendMessage(ctx, &bot.SendMessageParams{
-				ChatID: ChatID,
-				Text:   "Произошла ошибка при создании счёта. Попробуйте позже.",
+			_, _ = b.EditMessageText(ctx, &bot.EditMessageTextParams{
+				ChatID:    ChatID,
+				MessageID: update.CallbackQuery.Message.Message.ID,
+				Text:      "Произошла ошибка при создании счёта. Попробуйте позже.",
 			})
 			return
 		}
@@ -1723,13 +1792,25 @@ func (bm BotManager) ResponseVerificationTask(ctx context.Context, b *bot.Bot, u
 		})
 
 	case "revision":
-		response = "Задание проверено - все ок, но нужно кое-что доработать!"
-	}
 
-	_, err = b.SendMessage(ctx, &bot.SendMessageParams{
-		ChatID: parts[3],
-		Text:   response,
-	})
+		response = "Задание проверено - все ок, но нужно кое-что доработать!"
+		_, err = b.SendMessage(ctx, &bot.SendMessageParams{
+			ChatID: parts[3],
+			Text:   response,
+		})
+
+		if err != nil {
+			bm.Errorf("%v", err)
+		}
+
+		err = bm.Yougile.MoveTaskToColumn(*task.YougileID, ColumnInProgress)
+
+		_, err = b.EditMessageText(ctx, &bot.EditMessageTextParams{
+			ChatID:    update.CallbackQuery.Message.Message.Chat.ID,
+			MessageID: update.CallbackQuery.Message.Message.ID,
+			Text:      "Задание отправлено на доработку",
+		})
+	}
 
 	if err != nil {
 		bm.Errorf("%v", err)

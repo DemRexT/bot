@@ -27,7 +27,7 @@ func NewInvoiceClient(logger embedlog.Logger, cfg Config) *InvoiceClient {
 
 const url = "https://api.invoicebox.ru/l3/billing/api/order/order"
 
-func (ic *InvoiceClient) AskApi(ChatID int64, taskId string, description string, budget float64, name string) (string, error) {
+func (ic *InvoiceClient) AskApi(ChatID int64, taskId string, description string, budget float64, name string, StudentChat int64, YougileId string) (string, error) {
 	type BasketItem struct {
 		SKU         string  `json:"sku"`
 		Name        string  `json:"name"`
@@ -40,7 +40,9 @@ func (ic *InvoiceClient) AskApi(ChatID int64, taskId string, description string,
 	}
 
 	type MetaData struct {
-		TgChatID int64 `json:"chatId"`
+		TgChatID      int64  `json:"TgChatID"`
+		StudentTgId   int64  `json:"StudentTgId"`
+		YougileIdTask string `json:"YougileIdTask"`
 	}
 
 	type CreateOrderRequest struct {
@@ -74,7 +76,9 @@ func (ic *InvoiceClient) AskApi(ChatID int64, taskId string, description string,
 			},
 		},
 		Metadata: MetaData{
-			TgChatID: ChatID,
+			TgChatID:      ChatID,
+			StudentTgId:   StudentChat,
+			YougileIdTask: YougileId,
 		},
 	}
 

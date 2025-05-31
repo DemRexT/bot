@@ -1,6 +1,6 @@
 ﻿-- =============================================================================
 -- Diagram Name: apisrv
--- Created on: 31.05.2025 8:50:06
+-- Created on: 31.05.2025 9:15:32
 -- Diagram Version:
 -- =============================================================================
 
@@ -15,28 +15,29 @@ CREATE TABLE "companies" (
                              "statusId" int4 NOT NULL,
                              "createdAt" timestamp NOT NULL DEFAULT now(),
                              "nicknameTg" text,
+                             "email" text,
                              PRIMARY KEY("companyId")
 );
 
 
 
 CREATE TABLE "tasks" (
-                            "taskId" SERIAL NOT NULL,
-                            "companyId" int4 NOT NULL,
-                            "name" text,
-                            "scope" text NOT NULL,
-                            "description" text NOT NULL,
-                            "link" text NOT NULL,
-                            "deadline" text NOT NULL,
-                            "contactSlot" text NOT NULL,
-                            "statusId" int4 NOT NULL,
-                            "studentId" int4,
-                            "budget" float8 NOT NULL,
-                            "yougileId" text,
-                            "url" text,
-                            "createdAt" timestamp NOT NULL DEFAULT now(),
-                            PRIMARY KEY("taskId")
-                                          );
+                         "taskId" SERIAL NOT NULL,
+                         "companyId" int4 NOT NULL,
+                         "name" text,
+                         "scope" text NOT NULL,
+                         "description" text NOT NULL,
+                         "link" text NOT NULL,
+                         "deadline" text NOT NULL,
+                         "contactSlot" text NOT NULL,
+                         "statusId" int4 NOT NULL,
+                         "studentId" int4,
+                         "budget" float8 NOT NULL,
+                         "yougileId" text,
+                         "url" text,
+                         "createdAt" timestamp NOT NULL DEFAULT now(),
+                         PRIMARY KEY("taskId")
+);
 
 CREATE TABLE "students" (
                             "studentId" SERIAL NOT NULL,
